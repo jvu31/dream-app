@@ -1,6 +1,7 @@
 import { eq, InferInsertModel, InferSelectModel, Column } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/expo-sqlite";
 import { useSQLiteContext } from "expo-sqlite";
+import { useMemo } from "react";
 import * as schema from "./schema";
 import { SQLiteTable } from "drizzle-orm/sqlite-core";
 
