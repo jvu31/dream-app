@@ -3,7 +3,8 @@
     "name": "my-app",
     "slug": "my-app",
     "version": "1.0.0",
-
+    "scheme": "myapp",
+    "entryPoint": "./node_modules/expo-router/entry",
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -13,6 +14,7 @@
     },
 
     "plugins": [
+      "expo-router"
     ],
 
     "orientation": "portrait",
