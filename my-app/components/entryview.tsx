@@ -19,7 +19,7 @@ export default function EntryView() {
             <Text className={styles.h2}>9:30 AM</Text>
             <Text className={`${styles.h4} opacity-50`}>00:48s</Text>
           </View>
-          <Tag tag={'happy'} color1={'#0dff00'} color2={'##078500'} active={false} onPress={test} />
+          <Tag tag={'Happy'} color1={'#0dff00'} color2={'#078500'} active={true} onPress={test} />
         </View>
       </View>
     </View>

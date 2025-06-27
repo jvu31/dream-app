@@ -3,7 +3,7 @@ import { View, Image, Button } from 'react-native';
 export default function Header() {
   const test = () => {};
   return (
-    <View className="flex flex-row items-center justify-center">
+    <View className="flex flex-row items-center justify-center py-4">
       <Image
         source={require('../assets/icon.png')}
         className="rounded-lg"
