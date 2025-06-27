@@ -1,37 +1,56 @@
-import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
-import '../../global.css';
-import styles from '../../styles';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Tabs } from 'expo-router';
+import { SafeAreaView } from 'react-native';
+import React from 'react';
+import '../../global.css';
 
-function Icon(focused: any, icon: React.ComponentProps<typeof FontAwesome>['name'], title: string) {
-  if (focused) {
-    return (
-      <Text className={styles.h1}>{title}</Text>
-    )
-  }
+function TabBarIcon(props: {
+  name: React.ComponentProps<typeof FontAwesome>['name'];
+  color: string;
+}) {
+  return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
-export default function Layout() {
+export default function TabLayout() {
   return (
     <Tabs
-      screenOptions={{ 
-        tabBarStyle: { 
-          backgroundColor: '#2b2435', 
-          marginBottom: 10
+      screenOptions={{
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: 'white',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: {
+          backgroundColor: '#2b2435',
+          borderTopWidth: 0,
+          borderRadius: 50,
+          marginHorizontal: 20,
+          marginBottom: 36,
+          height: 60,
+          position: 'absolute',
+          overflow: 'hidden',
         },
-        tabBarItemStyle: {
-          justifyContent: "center",
-          alignItems: "center"
-        }
-      }}>
-      <Tabs.Screen name="index" options={{
-        title: "JournalEntries",
         headerShown: false,
-        tabBarIcon: ({ focused }) => (
-          <Icon focused={focused} icon="home" title="Home" />
-        )
-      }}/>
-      </Tabs>
+      }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Entries',
+          tabBarIcon: ({ color }) => <TabBarIcon name="book" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="alarm"
+        options={{
+          title: 'Alarm',
+          tabBarIcon: ({ color }) => <TabBarIcon name="bell" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
+        }}
+      />
+    </Tabs>
   );
 }
