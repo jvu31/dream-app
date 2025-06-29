@@ -13,14 +13,14 @@ interface Props {
 export default function Tag({ tag, color1, color2, active, onPress }: Props) {
   return (
     <Pressable onPress={onPress}>
-      <View className={`rounded-full overflow-hidden ${!active ? 'opacity-50' : ''}`}>
+      <View>
         <LinearGradient
           colors={[color1, color2]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ alignItems: 'center', justifyContent: 'center' }}
         >
-          <Text className={`${styles.h4} text-text py-2`}>{tag}</Text>
+          <Text>{tag}</Text>
         </LinearGradient>
       </View>
     </Pressable>

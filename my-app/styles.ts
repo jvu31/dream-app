@@ -1,9 +1,42 @@
-export const styles = {
-    container: 'flex-1 px-8 space-y-4',
-    h1: 'font-extrabold text-4xl text-text',
-    h2: 'font-medium text-xl text-text',
-    h3: 'text-2xl text-text',
-    h4: 'text-medium text-text',
-    h5: 'text-xl text-text',
-  };
-export default styles
+import { StyleSheet } from 'react-native';
+
+export const colors = {
+  text: '#f9f9fb',
+  background: '#060609',
+  primary: '#615f86',
+  secondary: '#2b2435',
+  accent: '#5f4b6c',
+};
+
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 32,
+    gap: 16,
+    backgroundColor: colors.background,
+  },
+  h1: {
+    fontWeight: '800',
+    fontSize: 32,
+    color: colors.text,
+  },
+  h2: {
+    fontWeight: '500',
+    fontSize: 20,
+    color: colors.text,
+  },
+  h3: {
+    fontSize: 24,
+    color: colors.text,
+  },
+  h4: {
+    fontWeight: '500',
+    color: colors.text,
+  },
+  h5: {
+    fontSize: 20,
+    color: colors.text,
+  },
+});
+
+export default styles;

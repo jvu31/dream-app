@@ -1,23 +1,29 @@
-import { Text, View } from 'react-native';
-import '../../global.css';
-import styles from '../../styles';
+import { StyleSheet, Text, View, SafeAreaView } from 'react-native';
+import { colors, styles } from '../../styles';
 import Header from '../../components/header';
 import EntryView from 'components/entryview';
 
 export default function Home() {
-  const test = () => {};
-
   return (
-    <View className="relative flex-1 bg-black">
-      <View className="flex-1 px-8 space-y-4" style={{ backgroundColor: 'rgba(43, 36, 53, 0.5) ' }}>
-        <Header />
-        <Text className="text-4xl font-extrabold text-text">June 2025</Text>
-        <Text className={`${styles.h2} opacity-50`}>June 25, 2025</Text>
-        <Text className={`${styles.h5} opacity-50`}>So today I woke feeling like shit man</Text>
-        <Text className={`${styles.h4} opacity-50`}>So today I wokefdsfsd feeling like</Text>
-        <EntryView/>
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, zIndex: -2 }}>
+      {/* Overlay with secondary color at 0.5 opacity */}
+      <View
+        style={[
+          StyleSheet.absoluteFillObject,
+          { backgroundColor: colors.secondary, opacity: 1, zIndex: -1 },
+        ]}
+      />
 
-    </View>
+      {/* Content (fully opaque) */}
+      <View style={[styles.container, { }]}>
+        <Header />
+        <Text style={[styles.h1, {opacity: .5}]}>June 2025</Text>
+        <Text style={styles.h2}>June 25, 2025</Text>
+        <Text style={styles.h3}>So today I woke feeling like shit man</Text>
+        <Text style={styles.h4}>So today I wokefdsfsd feeling like</Text>
+        <Text style={styles.h5}>So today I wokefdsfsd feeling like</Text>
+        <EntryView />
+      </View>
+    </SafeAreaView>
   );
 }

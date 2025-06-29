@@ -1,4 +1,4 @@
-import { View, Text, Switch } from 'react-native';
+import { View, Text, Switch, TouchableOpacity } from 'react-native';
 import styles from 'styles';
 import { useState } from 'react';
 
@@ -7,19 +7,20 @@ interface Props {
   days: string[];
   active: boolean;
   id: number;
+  openAlarm: (id: number) => void;
 }
 
-export default function AlarmView({ time, days, active, id }: Props) {
+export default function AlarmView({ time, days, active, id, openAlarm }: Props) {
   const [isEnabled, setIsEnabled] = useState(active);
   const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
 
   return (
-    <View className="border-b border-text/50 py-8">
-      <View className="flex-row items-center justify-between">
+    <TouchableOpacity  onPress={() => openAlarm(id)}>
+      <View >
         <View>
-          <Text className={`${styles.h1} text-text transition-opacity duration-300 ${!isEnabled && 'opacity-50'}`}>{time}</Text>
+          <Text >{time}</Text>
           {days && days.length > 0 && (
-            <Text className={`${styles.h5} text-text/50`}>
+            <Text >
               {days.join(', ')}
             </Text>
           )}
@@ -31,6 +32,6 @@ export default function AlarmView({ time, days, active, id }: Props) {
           value={isEnabled}
         />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }

@@ -1,12 +1,8 @@
 import { eq, InferInsertModel, InferSelectModel, Column } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/expo-sqlite";
-import { useSQLiteContext } from "expo-sqlite";
-import { useMemo } from "react";
 import * as schema from "./schema";
 import { SQLiteTable } from "drizzle-orm/sqlite-core";
+import {db} from "./client"
 
-const db = useSQLiteContext();
-const drizzleDb = drizzle(db, { schema });
 
 // --- Generic Helper Functions ---
 
@@ -19,7 +15,7 @@ async function genericFetchOne<TTable extends SQLiteTable, TIdColumn extends Col
     if (isNaN(id)) {
         throw new Error(`Invalid ${itemName} ID`);
     }
-    const item = await drizzleDb
+    const item = await db
         .select()
         .from(table)
         .where(eq(idColumn, id))
@@ -34,7 +30,7 @@ async function genericFetchOne<TTable extends SQLiteTable, TIdColumn extends Col
 async function genericFetchAll<TTable extends SQLiteTable>(
     table: TTable
 ): Promise<InferSelectModel<TTable>[]> {
-    const items = await drizzleDb
+    const items = await db
         .select()
         .from(table)
         .all();
@@ -47,7 +43,7 @@ async function genericInsert<TTable extends SQLiteTable>(
     itemName: string
 ): Promise<void> {
     try {
-        await drizzleDb.insert(table).values(data).run();
+        await db.insert(table).values(data).run();
     } catch (error) {
         console.error(`Error adding ${itemName}:`, error);
         throw new Error(`Unable to add ${itemName}`);
@@ -64,7 +60,7 @@ async function genericDelete<TTable extends SQLiteTable, TIdColumn extends Colum
         throw new Error(`Invalid ${itemName} ID`);
     }
     try {
-        await drizzleDb.delete(table).where(eq(idColumn, id)).run();
+        await db.delete(table).where(eq(idColumn, id)).run();
     } catch (error) {
         console.error(`Error deleting ${itemName}:`, error);
         throw new Error(`Unable to delete ${itemName}`);
@@ -82,7 +78,7 @@ async function genericUpdate<TTable extends SQLiteTable, TIdColumn extends Colum
         throw new Error(`Invalid ${itemName} ID`);
     }
     try {
-        await drizzleDb.update(table).set(data).where(eq(idColumn, id)).run();
+        await db.update(table).set(data).where(eq(idColumn, id)).run();
     } catch (error) {
         console.error(`Error editing ${itemName}:`, error);
         throw new Error(`Unable to edit ${itemName}`);

@@ -13,44 +13,44 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   return (
-      <Tabs
-        screenOptions={{
-          tabBarShowLabel: true,
-          tabBarActiveTintColor: 'white',
-          tabBarInactiveTintColor: 'gray',
-          tabBarStyle: {
-            backgroundColor: '#2b2435',
-            borderTopWidth: 0,
-            borderRadius: 50,
-            marginHorizontal: 20,
-            marginBottom: 36,
-            height: 60,
-            position: 'absolute',
-            overflow: 'hidden',
-          },
-          headerShown: false,
-        }}>
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Entries',
-            tabBarIcon: ({ color }) => <TabBarIcon name="book" color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="alarm"
-          options={{
-            title: 'Alarm',
-            tabBarIcon: ({ color }) => <TabBarIcon name="bell" color={color} />,
-          }}
-        />
-        <Tabs.Screen
-          name="calendar"
-          options={{
-            title: 'Calendar',
-            tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
-          }}
-        />
-      </Tabs>
+    <Tabs
+      screenOptions={{
+        tabBarShowLabel: true,
+        tabBarActiveTintColor: 'white',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: {
+          backgroundColor: '#2b2435',
+          borderTopWidth: 0,
+          borderRadius: 50,
+          marginHorizontal: 20,
+          marginBottom: 36,
+          height: 60,
+          position: 'absolute',
+          overflow: 'hidden',
+        },
+        headerShown: false,
+      }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Entries',
+          tabBarIcon: ({ color }) => <TabBarIcon name="book" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="alarm"
+        options={{
+          title: 'Alarm',
+          tabBarIcon: ({ color }) => <TabBarIcon name="bell" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Calendar',
+          tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
+        }}
+      />
+    </Tabs>
   );
 }
