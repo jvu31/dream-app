@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 
 export const colors = {
   text: '#f9f9fb',
-  background: '#060609',
+  background: '#101016',
   primary: '#615f86',
   secondary: '#2b2435',
   accent: '#5f4b6c',
@@ -21,7 +21,7 @@ export const styles = StyleSheet.create({
     color: colors.text,
   },
   h2: {
-    fontWeight: '500',
+    fontWeight: '400',
     fontSize: 20,
     color: colors.text,
   },

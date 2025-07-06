@@ -1,28 +1,41 @@
-import { StyleSheet, Text, View, SafeAreaView } from 'react-native';
+import { Text, View, SafeAreaView, FlatList } from 'react-native';
 import { colors, styles } from '../../styles';
 import Header from '../../components/header';
 import EntryView from 'components/entryview';
+import { useState, useEffect, use } from 'react';
+import { fetchAllEntriesTest } from 'db/queries';
 
 export default function Home() {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, zIndex: -2 }}>
-      {/* Overlay with secondary color at 0.5 opacity */}
-      <View
-        style={[
-          StyleSheet.absoluteFillObject,
-          { backgroundColor: colors.secondary, opacity: 1, zIndex: -1 },
-        ]}
-      />
+  const [entries, setEntries] = useState([]);
 
-      {/* Content (fully opaque) */}
-      <View style={[styles.container, { }]}>
+  useEffect(() => {
+    const fetchEntries = async () => {
+      try {
+        const data = await fetchAllEntriesTest();
+        setEntries(data);
+      } catch (error) {
+        console.error('Error fetching entries:', error);
+      }
+    };
+
+    fetchEntries();
+  }, []);
+
+  if (entries.length === 0) {
+    return <Text>No entries found.</Text>;
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, 0.5) ' }]}>
         <Header />
-        <Text style={[styles.h1, {opacity: .5}]}>June 2025</Text>
-        <Text style={styles.h2}>June 25, 2025</Text>
-        <Text style={styles.h3}>So today I woke feeling like shit man</Text>
-        <Text style={styles.h4}>So today I wokefdsfsd feeling like</Text>
-        <Text style={styles.h5}>So today I wokefdsfsd feeling like</Text>
-        <EntryView />
+        <Text style={[styles.h1]}>June 2025</Text>
+        <View style={{gap: 4}}>
+          <Text style={[styles.h2, { opacity: 0.5 }]}>June 25, 2025</Text>
+          <EntryView />
+        </View>
+        <FlatList data={entries} renderItem={({item}) => <EntryView />}/>
+
       </View>
     </SafeAreaView>
   );

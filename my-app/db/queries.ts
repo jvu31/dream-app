@@ -104,6 +104,10 @@ export const fetchAllEntries = async ({
     return [];
 };
 
+export const fetchAllEntriesTest = async () => {
+    return genericFetchAll(schema.entry);
+}
+
 // Fetch a journal entry
 export const fetchEntry = async (id: number) => {
   return genericFetchOne(schema.entry, schema.entry.entry_id, id, "Entry");
