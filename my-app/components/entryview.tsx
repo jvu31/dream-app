@@ -4,18 +4,18 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Tag from '../components/tag';
 
 interface Props {
-  id: number;
+  entry_id: number;
   icon: string;
-  day: string;
   time: string;
-  length: number;
   content: string;
-  tags: string[];
-  people: string[];
+  recording_id: number;
 }
 
-export default function EntryView() {
+export default function EntryView({ entry_id, icon, time, content, recording_id }: Props) {
   const test = () => {};
+  const date = new Date(time);
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const day = daysOfWeek[date.getDay()];
 
   return (
     <TouchableOpacity
@@ -40,7 +40,7 @@ export default function EntryView() {
         {/* Icon & day */}
         <View style={{ alignItems: 'center', flexShrink: 0 }}>
           <FontAwesome name="smile-o" size={60} color="white" style={{ opacity: 0.5 }} />
-          <Text style={[styles.h2, { opacity: 0.5 }]}>Wed</Text>
+          <Text style={[styles.h2, { opacity: 0.5 }]}>{day}</Text>
         </View>
 
         {/* Content */}
@@ -52,15 +52,17 @@ export default function EntryView() {
               alignItems: 'center',
               flexWrap: 'wrap',
             }}>
-            <Text style={styles.h2}>9:30 AM</Text>
+            <Text
+              style={
+                styles.h2
+              }>{`${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')} ${date.getHours() >= 12 ? 'PM' : 'AM'}`}</Text>
             <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={1} ellipsizeMode="tail">
               {'00:48s'}
             </Text>
           </View>
 
           <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={2} ellipsizeMode="tail">
-            This is the main body of a journal entry, and with this body it is supposed to provide
-            an initial snippet into the content. It will wrap naturally if it’s longer!
+            {content}
           </Text>
 
           <View

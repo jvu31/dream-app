@@ -6,13 +6,14 @@ export const recording = sqliteTable('recording', {
     length: integer('length')
 })
 
+/*
 export const content = sqliteTable('content', {
     content_id: integer('content_id').primaryKey({ autoIncrement: true }),
     time: text('time'),
     content: text('content'),
     recording_id: integer('recording_id')
         .references(() => recording.recording_id, { onDelete: 'cascade' }),
-})
+})*/
 
 export const ringtone = sqliteTable('ringtone', {
     ringtone_id: integer('ringtone_id').primaryKey({ autoIncrement: true }),
@@ -32,8 +33,10 @@ export const alarm = sqliteTable('alarm', {
 export const entry = sqliteTable('entry', {
     entry_id: integer('entry_id').primaryKey({ autoIncrement: true }),
     pinned: integer('pinned').default(0),
-    content_id: integer('content_id')
-        .references(() => content.content_id),
+    time: text('time'),
+    content: text('content'),
+    recording_id: integer('recording_id')
+        .references(() => recording.recording_id, { onDelete: 'cascade' })
 })
 
 export const tag = sqliteTable('tag', {

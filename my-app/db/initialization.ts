@@ -10,16 +10,6 @@ export const initDatabase = async () => {
   `);
 
   await db.run(`
-    CREATE TABLE IF NOT EXISTS content (
-      content_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      time TEXT,
-      content TEXT,
-      recording_id INTEGER,
-      FOREIGN KEY(recording_id) REFERENCES recording(recording_id) ON DELETE CASCADE
-    );
-  `);
-
-  await db.run(`
     CREATE TABLE IF NOT EXISTS ringtone (
       ringtone_id INTEGER PRIMARY KEY AUTOINCREMENT,
       track TEXT,
@@ -42,8 +32,10 @@ export const initDatabase = async () => {
     CREATE TABLE IF NOT EXISTS entry (
       entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
       pinned INTEGER DEFAULT 0,
-      content_id INTEGER,
-      FOREIGN KEY(content_id) REFERENCES content(content_id)
+      time TEXT,
+      content TEXT,
+      recording_id INTEGER,
+      FOREIGN KEY(recording_id) REFERENCES recording(recording_id) ON DELETE CASCADE
     );
   `);
 
@@ -91,50 +83,40 @@ export const initDatabase = async () => {
 
 export const createDummyData = async () => {
   try {
-    // Insert dummy ringtone if none exists
+    // ✅ Insert a ringtone
     await db.run(`
       INSERT INTO ringtone (track, volume)
       SELECT 'Morning Tune', 70
       WHERE NOT EXISTS (SELECT 1 FROM ringtone);
     `);
 
-    // Insert dummy alarms if none exist
+    // ✅ Insert multiple alarms
     await db.run(`
       INSERT INTO alarm (time, days, snooze, ringtone_id)
       SELECT '07:30 AM', 'Mon,Tue,Wed', 5, 1
-      WHERE NOT EXISTS (SELECT 1 FROM alarm);
+      WHERE NOT EXISTS (SELECT 1 FROM alarm WHERE time = '07:30 AM');
     `);
 
     await db.run(`
       INSERT INTO alarm (time, days, snooze, ringtone_id)
       SELECT '09:00 AM', 'Thu,Fri', 10, 1
-      WHERE NOT EXISTS (
-        SELECT 1 FROM alarm WHERE time = '09:00 AM'
-      );
+      WHERE NOT EXISTS (SELECT 1 FROM alarm WHERE time = '09:00 AM');
     `);
 
-    // Insert dummy recording if none exists
+    await db.run(`
+      INSERT INTO alarm (time, days, snooze, ringtone_id)
+      SELECT '06:15 AM', 'Sat,Sun', 0, 1
+      WHERE NOT EXISTS (SELECT 1 FROM alarm WHERE time = '06:15 AM');
+    `);
+
+    // ✅ Insert a recording
     await db.run(`
       INSERT INTO recording (audio, length)
       SELECT 'audio1.mp3', 180
       WHERE NOT EXISTS (SELECT 1 FROM recording);
     `);
 
-    // Insert dummy content if none exists
-    await db.run(`
-      INSERT INTO content (time, content, recording_id)
-      SELECT '2025-07-06T09:30:00', 'This is a sample journal entry content.', 1
-      WHERE NOT EXISTS (SELECT 1 FROM content);
-    `);
-
-    // Insert dummy entry if none exists
-    await db.run(`
-      INSERT INTO entry (pinned, content_id)
-      SELECT 1, 1
-      WHERE NOT EXISTS (SELECT 1 FROM entry);
-    `);
-
-    // Insert dummy tags if none exist
+    // ✅ Insert tags
     await db.run(`
       INSERT INTO tag (name, type, color)
       SELECT 'Happy', 'mood', '#0dff00'
@@ -147,36 +129,59 @@ export const createDummyData = async () => {
       WHERE NOT EXISTS (SELECT 1 FROM tag WHERE name = 'Grateful');
     `);
 
-    // Link entry and tags
     await db.run(`
-      INSERT INTO entry_tag (entry_id, tag_id)
-        SELECT 1, tag_id
-        FROM tag
-        WHERE name = 'Happy'
+      INSERT INTO tag (name, type, color)
+      SELECT 'Relaxed', 'mood', '#0099ff'
+      WHERE NOT EXISTS (SELECT 1 FROM tag WHERE name = 'Relaxed');
+    `);
+
+    // ✅ Insert multiple entries across May, June, July
+    const entries = [
+      { pinned: 1, time: '2025-05-10T08:00:00', content: 'May entry one.', recording_id: 1 },
+      { pinned: 0, time: '2025-05-15T09:15:00', content: 'May entry two.', recording_id: 1 },
+      { pinned: 0, time: '2025-06-01T07:45:00', content: 'June entry one.', recording_id: 1 },
+      { pinned: 0, time: '2025-06-15T10:30:00', content: 'June entry two.', recording_id: 1 },
+      { pinned: 1, time: '2025-07-01T06:30:00', content: 'July entry one.', recording_id: 1 },
+      { pinned: 0, time: '2025-07-05T08:00:00', content: 'July entry two.', recording_id: 1 },
+      { pinned: 0, time: '2025-07-10T09:00:00', content: 'July entry three.', recording_id: 1 },
+    ];
+
+    for (const entry of entries) {
+      await db.run(`
+        INSERT INTO entry (pinned, time, content, recording_id)
+        SELECT ${entry.pinned}, '${entry.time}', '${entry.content}', ${entry.recording_id}
+        WHERE NOT EXISTS (SELECT 1 FROM entry WHERE time = '${entry.time}');
+      `);
+    }
+
+    // ✅ Link entries to tags
+    const tagLinks = [
+      { entryTime: '2025-05-10T08:00:00', tagName: 'Happy' },
+      { entryTime: '2025-06-01T07:45:00', tagName: 'Grateful' },
+      { entryTime: '2025-07-01T06:30:00', tagName: 'Relaxed' },
+      { entryTime: '2025-07-10T09:00:00', tagName: 'Happy' },
+    ];
+
+    for (const link of tagLinks) {
+      await db.run(`
+        INSERT INTO entry_tag (entry_id, tag_id)
+        SELECT e.entry_id, t.tag_id
+        FROM entry e, tag t
+        WHERE e.time = '${link.entryTime}' AND t.name = '${link.tagName}'
         AND NOT EXISTS (
-    SELECT 1 FROM entry_tag WHERE entry_id = 1 AND tag_id = (SELECT tag_id FROM tag WHERE name = 'Happy')
+          SELECT 1 FROM entry_tag WHERE entry_id = e.entry_id AND tag_id = t.tag_id
         );
-    `);
+      `);
+    }
 
-    await db.run(`
-      INSERT INTO entry_tag (entry_id, tag_id)
-SELECT 1, tag_id
-FROM tag
-WHERE name = 'Grateful'
-  AND NOT EXISTS (
-    SELECT 1 FROM entry_tag WHERE entry_id = 1 AND tag_id = (SELECT tag_id FROM tag WHERE name = 'Grateful')
-  );
-
-    `);
-
-    // Insert dummy summary if none exists
+    // ✅ Insert dummy summary
     await db.run(`
       INSERT INTO summary (start_date, range, summary, image)
       SELECT '2025-07-01', 7, 'This is a weekly summary.', 'image.png'
       WHERE NOT EXISTS (SELECT 1 FROM summary);
     `);
 
-    // Link summary and entry
+    // ✅ Link summary to one entry
     await db.run(`
       INSERT INTO summary_entry (summary_id, entry_id)
       SELECT 1, 1
@@ -184,7 +189,22 @@ WHERE name = 'Grateful'
         SELECT 1 FROM summary_entry WHERE summary_id = 1 AND entry_id = 1
       );
     `);
+
+    console.log('✅ Dummy data created with multiple entries & months!');
   } catch (err) {
-    console.error('Error creating dummy data:', err);
+    console.error('❌ Error creating dummy data:', err);
   }
+};
+
+
+export const clearDatabase = async () => {
+    await db.run('DROP TABLE IF EXISTS recording');
+    await db.run('DROP TABLE IF EXISTS ringtone');
+    await db.run('DROP TABLE IF EXISTS alarm');
+    await db.run('DROP TABLE IF EXISTS entry');
+    await db.run('DROP TABLE IF EXISTS tag');
+    await db.run('DROP TABLE IF EXISTS entry_tag');
+    await db.run('DROP TABLE IF EXISTS summary');
+    await db.run('DROP TABLE IF EXISTS summary_entry');
+    console.log('All tables cleared!');
 };

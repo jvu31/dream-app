@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { SafeAreaView, View } from 'react-native';
 import React, { useEffect } from 'react';
 import '../../global.css';
-import { initDatabase, createDummyData } from 'db/initialization';
+import { initDatabase, createDummyData, clearDatabase } from 'db/initialization';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -15,10 +15,9 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   useEffect(() => {
     const setupDB = async () => {
+      await clearDatabase()
       await initDatabase();
-      console.log('DB initialized!');
       await createDummyData();
-      console.log('Dummy data created!');
     };
     setupDB();
   }, []);
