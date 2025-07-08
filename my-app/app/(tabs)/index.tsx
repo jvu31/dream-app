@@ -2,28 +2,44 @@ import { Text, View, SafeAreaView, SectionList } from 'react-native';
 import { colors, styles } from '../../styles';
 import Header from '../../components/header';
 import EntryView from 'components/entryview';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { fetchAllEntriesTest } from 'db/queries';
 import { LinearGradient } from 'expo-linear-gradient';
+import SearchBar from '../../components/searchbar';
+import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function Home() {
   const [entries, setEntries] = useState([]);
   const [groupedEntries, setGroupedEntries] = useState([]);
+  const [moodFilters, setMoodFilters] = useState([]);
+  const [peopleFilters, setPeopleFilters] = useState([]);
+  const [searchValue, setSearchValue] = useState('');
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['80%'], []);
 
+  // Fetches the ids from the database
   useEffect(() => {
-    const fetchEntries = async () => {
-      try {
-        const data = await fetchAllEntriesTest();
-        setEntries(data);
-        console.log('Fetched entries!');
-      } catch (error) {
-        console.error('Error fetching entries:', error);
-      }
-    };
+    const handler = setTimeout(() => {
+      const fetchEntries = async () => {
+        try {
+          const data = await fetchAllEntriesTest();
+          setEntries(data);
+          console.log('Fetched entries!');
+        } catch (error) {
+          console.error('Error fetching entries:', error);
+        }
+      };
 
-    fetchEntries();
+      fetchEntries();
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
   }, []);
 
+  // Groups the entries based on month
   useEffect(() => {
     if (entries.length === 0) return;
 
@@ -52,10 +68,34 @@ export default function Home() {
     console.log('Grouped entries by month!');
   }, [entries]);
 
+  // Set search value with debounce call to database
+
+  // Renders a backdrop that closes the sheet on press
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop
+        {...props}
+        pressBehavior="close"
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+      />
+    ),
+    []
+  );
+
+  // Opens the filters
+  const openFilters = () => {
+    bottomSheetRef.current?.expand();
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, 0.5)' }]}>
+      <GestureHandlerRootView
+        style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, 0.5)' }]}>
         <Header />
+        {/* Search bar */}
+        <SearchBar setSearchValue={setSearchValue} openFilters={openFilters} />
+        {/* List of entries */}
         <SectionList
           sections={groupedEntries}
           keyExtractor={(item, index) => `${item.entry_id}-${index}`}
@@ -97,7 +137,23 @@ export default function Home() {
             height: 150,
           }}
         />
-      </View>
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={-1}
+          snapPoints={snapPoints}
+          enablePanDownToClose
+          backdropComponent={renderBackdrop}
+          backgroundStyle={{
+            backgroundColor: 'rgba(43, 36, 53, 0.6)',
+          }}
+          handleIndicatorStyle={{
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+          }}>
+          <BottomSheetView>
+            <Text style={styles.h1}>Awesome</Text>
+          </BottomSheetView>
+        </BottomSheet>
+      </GestureHandlerRootView>
     </SafeAreaView>
   );
 }

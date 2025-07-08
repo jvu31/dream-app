@@ -1,92 +1,81 @@
-import { eq, InferInsertModel, InferSelectModel, Column } from "drizzle-orm";
-import * as schema from "./schema";
-import { SQLiteTable } from "drizzle-orm/sqlite-core";
-import {db} from "./client"
-
+import { eq, InferInsertModel, InferSelectModel, Column } from 'drizzle-orm';
+import * as schema from './schema';
+import { SQLiteTable } from 'drizzle-orm/sqlite-core';
+import { db } from './client';
 
 // --- Generic Helper Functions ---
 
 async function genericFetchOne<TTable extends SQLiteTable, TIdColumn extends Column<any, any, any>>(
-    table: TTable,
-    idColumn: TIdColumn,
-    id: number,
-    itemName: string
+  table: TTable,
+  idColumn: TIdColumn,
+  id: number,
+  itemName: string
 ): Promise<InferSelectModel<TTable>> {
-    if (isNaN(id)) {
-        throw new Error(`Invalid ${itemName} ID`);
-    }
-    const item = await db
-        .select()
-        .from(table)
-        .where(eq(idColumn, id))
-        .get();
+  if (isNaN(id)) {
+    throw new Error(`Invalid ${itemName} ID`);
+  }
+  const item = await db.select().from(table).where(eq(idColumn, id)).get();
 
-    if (!item) {
-        throw new Error(`${itemName} not found`);
-    }
-    return item as InferSelectModel<TTable>;
+  if (!item) {
+    throw new Error(`${itemName} not found`);
+  }
+  return item as InferSelectModel<TTable>;
 }
 
 async function genericFetchAll<TTable extends SQLiteTable>(
-    table: TTable
+  table: TTable
 ): Promise<InferSelectModel<TTable>[]> {
-    const items = await db
-        .select()
-        .from(table)
-        .all();
-    return items as InferSelectModel<TTable>[];
+  const items = await db.select().from(table).all();
+  return items as InferSelectModel<TTable>[];
 }
 
 async function genericInsert<TTable extends SQLiteTable>(
-    table: TTable,
-    data: InferInsertModel<TTable>,
-    itemName: string
+  table: TTable,
+  data: InferInsertModel<TTable>,
+  itemName: string
 ): Promise<void> {
-    try {
-        await db.insert(table).values(data).run();
-    } catch (error) {
-        console.error(`Error adding ${itemName}:`, error);
-        throw new Error(`Unable to add ${itemName}`);
-    }
+  try {
+    await db.insert(table).values(data).run();
+  } catch (error) {
+    console.error(`Error adding ${itemName}:`, error);
+    throw new Error(`Unable to add ${itemName}`);
+  }
 }
 
 async function genericDelete<TTable extends SQLiteTable, TIdColumn extends Column<any, any, any>>(
-    table: TTable,
-    idColumn: TIdColumn,
-    id: number,
-    itemName: string
+  table: TTable,
+  idColumn: TIdColumn,
+  id: number,
+  itemName: string
 ): Promise<void> {
-    if (isNaN(id)) {
-        throw new Error(`Invalid ${itemName} ID`);
-    }
-    try {
-        await db.delete(table).where(eq(idColumn, id)).run();
-    } catch (error) {
-        console.error(`Error deleting ${itemName}:`, error);
-        throw new Error(`Unable to delete ${itemName}`);
-    }
+  if (isNaN(id)) {
+    throw new Error(`Invalid ${itemName} ID`);
+  }
+  try {
+    await db.delete(table).where(eq(idColumn, id)).run();
+  } catch (error) {
+    console.error(`Error deleting ${itemName}:`, error);
+    throw new Error(`Unable to delete ${itemName}`);
+  }
 }
 
 async function genericUpdate<TTable extends SQLiteTable, TIdColumn extends Column<any, any, any>>(
-    table: TTable,
-    idColumn: TIdColumn,
-    id: number,
-    data: Partial<InferInsertModel<TTable>>,
-    itemName: string
+  table: TTable,
+  idColumn: TIdColumn,
+  id: number,
+  data: Partial<InferInsertModel<TTable>>,
+  itemName: string
 ): Promise<void> {
-    if (isNaN(id)) {
-        throw new Error(`Invalid ${itemName} ID`);
-    }
-    try {
-        await db.update(table).set(data).where(eq(idColumn, id)).run();
-    } catch (error) {
-        console.error(`Error editing ${itemName}:`, error);
-        throw new Error(`Unable to edit ${itemName}`);
-    }
+  if (isNaN(id)) {
+    throw new Error(`Invalid ${itemName} ID`);
+  }
+  try {
+    await db.update(table).set(data).where(eq(idColumn, id)).run();
+  } catch (error) {
+    console.error(`Error editing ${itemName}:`, error);
+    throw new Error(`Unable to edit ${itemName}`);
+  }
 }
-
-
-
 
 // --- Entry Queries ---
 
@@ -94,213 +83,235 @@ async function genericUpdate<TTable extends SQLiteTable, TIdColumn extends Colum
 export const fetchAllEntries = async ({
   query,
   tag,
-  pin
+  pin,
 }: {
   query: string;
   tag: string;
-  pin: number
-}) => {    
-    
-    return [];
+  pin: number;
+}) => {
+  return [];
 };
 
 export const fetchAllEntriesTest = async () => {
-    return genericFetchAll(schema.entry);
-}
+  return genericFetchAll(schema.entry);
+};
 
 // Fetch a journal entry
 export const fetchEntry = async (id: number) => {
-  return genericFetchOne(schema.entry, schema.entry.entry_id, id, "Entry");
+  return genericFetchOne(schema.entry, schema.entry.entry_id, id, 'Entry');
 };
 
 // Add a journal entry
 export const addEntry = async (entryData: InferInsertModel<typeof schema.entry>) => {
-    await genericInsert(schema.entry, entryData, "entry");
-}
+  await genericInsert(schema.entry, entryData, 'entry');
+};
 
 // Remove a journal entry
 export const removeEntry = async (id: number) => {
-    await genericDelete(schema.entry, schema.entry.entry_id, id, "entry");
-}
+  await genericDelete(schema.entry, schema.entry.entry_id, id, 'entry');
+};
 
 // Edit a journal entry (changing the content, recording, pin)
-export const editEntry = async (id: number, entryData: Partial<InferInsertModel<typeof schema.entry>>) => {
-    await genericUpdate(schema.entry, schema.entry.entry_id, id, entryData, "entry");
-}
-
-
+export const editEntry = async (
+  id: number,
+  entryData: Partial<InferInsertModel<typeof schema.entry>>
+) => {
+  await genericUpdate(schema.entry, schema.entry.entry_id, id, entryData, 'entry');
+};
 
 // --- Recording Queries ---
 
 // Fetch a recording
 export const fetchRecording = async (id: number) => {
-    return genericFetchOne(schema.recording, schema.recording.recording_id, id, "Recording");
-}
+  return genericFetchOne(schema.recording, schema.recording.recording_id, id, 'Recording');
+};
 
 // Adding a recording to an entry (transcription added to entry content later)
-export const addRecording = async (recordingData: InferInsertModel<typeof schema.recording>) => {   
-    await genericInsert(schema.recording, recordingData, "recording");
-}
+export const addRecording = async (recordingData: InferInsertModel<typeof schema.recording>) => {
+  await genericInsert(schema.recording, recordingData, 'recording');
+};
 
 // Removing a recording
 export const removeRecording = async (id: number) => {
-    await genericDelete(schema.recording, schema.recording.recording_id, id, "recording");
-}
-
-
+  await genericDelete(schema.recording, schema.recording.recording_id, id, 'recording');
+};
 
 // --- Alarm Queries ---
 
 // Fetch all alarms
 export const fetchAllAlarms = async () => {
-    return genericFetchAll(schema.alarm);
-}
+  return genericFetchAll(schema.alarm);
+};
 
 // Fetch an alarm
 export const fetchAlarm = async (id: number) => {
-    return genericFetchOne(schema.alarm, schema.alarm.alarm_id, id, "Alarm");
-}
+  return genericFetchOne(schema.alarm, schema.alarm.alarm_id, id, 'Alarm');
+};
 
 // Add an alarm
 export const addAlarm = async (alarmData: InferInsertModel<typeof schema.alarm>) => {
-    await genericInsert(schema.alarm, alarmData, "alarm");
-}
+  await genericInsert(schema.alarm, alarmData, 'alarm');
+};
 
 // Edit an alarm
-export const editAlarm = async (id: number, alarmData: Partial<InferInsertModel<typeof schema.alarm>>) => {
-    await genericUpdate(schema.alarm, schema.alarm.alarm_id, id, alarmData, "alarm");
-}
+export const editAlarm = async (
+  id: number,
+  alarmData: Partial<InferInsertModel<typeof schema.alarm>>
+) => {
+  await genericUpdate(schema.alarm, schema.alarm.alarm_id, id, alarmData, 'alarm');
+};
 
 // Remove an alarm
 export const removeAlarm = async (id: number) => {
-    await genericDelete(schema.alarm, schema.alarm.alarm_id, id, "alarm");
-}
-
-
+  await genericDelete(schema.alarm, schema.alarm.alarm_id, id, 'alarm');
+};
 
 // --- Ringtone Queries ---
 
 // Fetch all ringtones
 export const fetchAllRingtones = async () => {
-    return genericFetchAll(schema.ringtone);
-}
+  return genericFetchAll(schema.ringtone);
+};
 
 // Fetch a ringtone
 export const fetchRingtone = async (id: number) => {
-    return genericFetchOne(schema.ringtone, schema.ringtone.ringtone_id, id, "Ringtone");
-}
+  return genericFetchOne(schema.ringtone, schema.ringtone.ringtone_id, id, 'Ringtone');
+};
 
 // Add a ringtone
 export const addRingtone = async (ringtoneData: InferInsertModel<typeof schema.ringtone>) => {
-    await genericInsert(schema.ringtone, ringtoneData, "ringtone");
-}
+  await genericInsert(schema.ringtone, ringtoneData, 'ringtone');
+};
 
 // Edit a ringtone
-export const editRingtone = async (id: number, ringtoneData: Partial<InferInsertModel<typeof schema.ringtone>>) => {
-    await genericUpdate(schema.ringtone, schema.ringtone.ringtone_id, id, ringtoneData, "ringtone");
-}
+export const editRingtone = async (
+  id: number,
+  ringtoneData: Partial<InferInsertModel<typeof schema.ringtone>>
+) => {
+  await genericUpdate(schema.ringtone, schema.ringtone.ringtone_id, id, ringtoneData, 'ringtone');
+};
 
 // Remove a ringtone
 export const removeRingtone = async (id: number) => {
-    await genericDelete(schema.ringtone, schema.ringtone.ringtone_id, id, "ringtone");
-}
-
-
+  await genericDelete(schema.ringtone, schema.ringtone.ringtone_id, id, 'ringtone');
+};
 
 // --- Tag Queries ---
 
 // Fetch all tags
 export const fetchAllTags = async () => {
-    return genericFetchAll(schema.tag);
-}
+  return genericFetchAll(schema.tag);
+};
 
 // Fetch a tag
 export const fetchTag = async (id: number) => {
-    return genericFetchOne(schema.tag, schema.tag.tag_id, id, "Tag");
-}
+  return genericFetchOne(schema.tag, schema.tag.tag_id, id, 'Tag');
+};
 
 // Add a tag
 export const addTag = async (tagData: InferInsertModel<typeof schema.tag>) => {
-    await genericInsert(schema.tag, tagData, "tag");
-}
+  await genericInsert(schema.tag, tagData, 'tag');
+};
 
 // Edit a tag
-export const editTag = async (id: number, tagData: Partial<InferInsertModel<typeof schema.tag>>) => {
-    await genericUpdate(schema.tag, schema.tag.tag_id, id, tagData, "tag");
-}
+export const editTag = async (
+  id: number,
+  tagData: Partial<InferInsertModel<typeof schema.tag>>
+) => {
+  await genericUpdate(schema.tag, schema.tag.tag_id, id, tagData, 'tag');
+};
 
 // Remove a tag
 export const removeTag = async (id: number) => {
-    await genericDelete(schema.tag, schema.tag.tag_id, id, "tag");
-}
-
-
+  await genericDelete(schema.tag, schema.tag.tag_id, id, 'tag');
+};
 
 // --- Entry_Tag Queries (linking table operations) ---
 
-// Fetch an entry's tags
+// Fetch all tags for a given entry
 export const fetchEntryTags = async (entryId: number) => {
-    
-}
+  const data = await db
+    .select({
+      entryTagId: schema.entry_tag.entry_tag_id,
+      entryId: schema.entry_tag.entry_id,
+      tagId: schema.tag.tag_id,
+      name: schema.tag.name,
+      type: schema.tag.type,
+      color: schema.tag.color,
+    })
+    .from(schema.entry_tag)
+    .where(eq(schema.entry_tag.entry_id, entryId))
+    .innerJoin(schema.tag, eq(schema.entry_tag.tag_id, schema.tag.tag_id))
+    .all();
+
+  return data; // Example: [{ entryTagId: 1, entryId: 1, tagId: 2, name: 'Happy', ... }]
+};
+
 
 // Fetch a tag's entries
+// Fetch all entries for a given tag
 export const fetchTagEntries = async (tagId: number) => {
-    
-}
+  const data = await db
+    .select({
+      entryTagId: schema.entry_tag.entry_tag_id,
+      tagId: schema.entry_tag.tag_id,
+      entryId: schema.entry.entry_id,
+      time: schema.entry.time,
+      content: schema.entry.content,
+      pinned: schema.entry.pinned,
+    })
+    .from(schema.entry_tag)
+    .where(eq(schema.entry_tag.tag_id, tagId))
+    .innerJoin(schema.entry, eq(schema.entry_tag.entry_id, schema.entry.entry_id))
+    .all();
+
+  return data; // Example: [{ entryTagId: 1, tagId: 2, entryId: 1, ... }]
+};
+
 
 // Add a tag to an entry
-export const addTagToEntry = async (entryId: number, tagId: number) => {
-    
-}
+export const addTagToEntry = async (entryId: number, tagId: number) => {};
 
 // Remove a tag from an entry
-export const removeTagFromEntry = async (entryId: number, tagId: number) => {
-    
-}
-
-
+export const removeTagFromEntry = async (entryId: number, tagId: number) => {};
 
 // --- Summary Queries ---
 
 // Fetch all summaries
 export const fetchAllSummaries = async () => {
-    return genericFetchAll(schema.summary);
-}
+  return genericFetchAll(schema.summary);
+};
 
 // Fetch a summary
 export const fetchSummary = async (id: number) => {
-    return genericFetchOne(schema.summary, schema.summary.summary_id, id, "Summary");
-}
+  return genericFetchOne(schema.summary, schema.summary.summary_id, id, 'Summary');
+};
 
 // Add a summary
 export const addSummary = async (summaryData: InferInsertModel<typeof schema.summary>) => {
-    await genericInsert(schema.summary, summaryData, "summary");
-}
+  await genericInsert(schema.summary, summaryData, 'summary');
+};
 
 // Edit a summary
-export const editSummary = async (id: number, summaryData: Partial<InferInsertModel<typeof schema.summary>>) => {
-    await genericUpdate(schema.summary, schema.summary.summary_id, id, summaryData, "summary");
-}
+export const editSummary = async (
+  id: number,
+  summaryData: Partial<InferInsertModel<typeof schema.summary>>
+) => {
+  await genericUpdate(schema.summary, schema.summary.summary_id, id, summaryData, 'summary');
+};
 
 // Remove a summary
 export const removeSummary = async (id: number) => {
-    await genericDelete(schema.summary, schema.summary.summary_id, id, "summary");
-}
-
+  await genericDelete(schema.summary, schema.summary.summary_id, id, 'summary');
+};
 
 // --- Summary_Entry Queries (linking table operations) ---
 
 // Fetch a summary's entries
-export const fetchSummaryEntries = async (summaryId: number) => {
-    
-}
+export const fetchSummaryEntries = async (summaryId: number) => {};
 
 // Add an entry to a summary
-export const addEntryToSummary = async (summaryId: number, entryId: number) => {
-    
-}
+export const addEntryToSummary = async (summaryId: number, entryId: number) => {};
 
 // Remove an entry from a summary
-export const removeEntryFromSummary = async (summaryId: number, entryId: number) => {
-    
-}
+export const removeEntryFromSummary = async (summaryId: number, entryId: number) => {};

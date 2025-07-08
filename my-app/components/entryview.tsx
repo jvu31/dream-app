@@ -1,7 +1,9 @@
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import { styles, colors } from 'styles';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Tag from '../components/tag';
+import { fetchEntryTags, fetchRecording } from 'db/queries';
+import { useEffect, useState } from 'react';
 
 interface Props {
   entry_id: number;
@@ -16,6 +18,66 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
   const date = new Date(time);
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const day = daysOfWeek[date.getDay()];
+  const [tags, setTags] = useState([]);
+  const [moods, setMoods] = useState([]);
+  const [people, setPeople] = useState([]);
+  const [audio, setAudio] = useState([]);
+
+  // Fetches the tags tied to an entry
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const data = await fetchEntryTags(entry_id);
+        setTags(data);
+        console.log('Tags fetched!');
+      } catch (error) {
+        console.error('Error fetching tags:', error);
+      }
+    };
+
+    fetchTags();
+  }, []);
+
+  // Saves the mood and people tags from the fetched tags
+  useEffect(() => {
+    if (tags.length === 0) return;
+
+    const grouped = tags.reduce((acc, entry) => {
+      if (!acc[entry.type]) {
+        acc[entry.type] = [];
+      }
+      acc[entry.type].push(entry);
+      return acc;
+    }, {});
+
+    setMoods(grouped['mood'] || []);
+    setPeople(grouped['people'] || []);
+
+    console.log('Tags grouped!');
+  }, [tags]);
+
+  // Fetches the entry's audio recording
+  useEffect(() => {
+    const fetchAudio = async () => {
+      try {
+        const data: any = await fetchRecording(recording_id);
+        setAudio(data);
+        console.log('Audio recording fetched!');
+      } catch (error) {
+        console.error('Error fetching audio recording:', error);
+      }
+    };
+    fetchAudio();
+  }, []);
+
+  function convertSecondsToMinutesAndSeconds(totalSeconds) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
+
+    return `${minutes}:${formattedSeconds}`;
+  }
 
   return (
     <TouchableOpacity
@@ -35,7 +97,7 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
           flexDirection: 'row',
           gap: 16,
           flexWrap: 'nowrap',
-          alignItems: 'flex-start',
+          alignItems: 'center',
         }}>
         {/* Icon & day */}
         <View style={{ alignItems: 'center', flexShrink: 0 }}>
@@ -57,7 +119,7 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
                 styles.h2
               }>{`${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')} ${date.getHours() >= 12 ? 'PM' : 'AM'}`}</Text>
             <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={1} ellipsizeMode="tail">
-              {'00:48s'}
+              {convertSecondsToMinutesAndSeconds(audio.length)}
             </Text>
           </View>
 
@@ -65,20 +127,30 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
             {content}
           </Text>
 
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              marginTop: 8,
-              gap: 8,
-            }}>
-            <Tag tag={'Happy'} color1={'#0dff00'} color2={'#078500'} active={true} onPress={test} />
-            <Tag
-              tag={'Grateful'}
-              color1={'#ff9900'}
-              color2={'#cc6600'}
-              active={true}
-              onPress={test}
+          <View style={{ marginTop: 8 }}>
+            <FlatList
+              data={moods}
+              renderItem={({ item }) => (
+                <Tag tag={item.name} color1={item.color} active={true} onPress={test} />
+              )}
+              keyExtractor={(item) => item.tagId.toString()}
+              horizontal={true}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: 8,
+              }}
+            />
+            <FlatList
+              data={people}
+              renderItem={({ item }) => (
+                <Tag tag={item.name} color1={item.color} active={true} onPress={test} />
+              )}
+              keyExtractor={(item) => item.tagId.toString()}
+              horizontal={true}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                gap: 8,
+              }}
             />
           </View>
         </View>

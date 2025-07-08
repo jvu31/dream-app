@@ -83,59 +83,59 @@ export const initDatabase = async () => {
 
 export const createDummyData = async () => {
   try {
-    // ✅ Insert a ringtone
+    // ✅ Insert ringtone
     await db.run(`
       INSERT INTO ringtone (track, volume)
       SELECT 'Morning Tune', 70
       WHERE NOT EXISTS (SELECT 1 FROM ringtone);
     `);
 
-    // ✅ Insert multiple alarms
+    // ✅ Insert alarms
     await db.run(`
       INSERT INTO alarm (time, days, snooze, ringtone_id)
       SELECT '07:30 AM', 'Mon,Tue,Wed', 5, 1
       WHERE NOT EXISTS (SELECT 1 FROM alarm WHERE time = '07:30 AM');
     `);
 
-    await db.run(`
-      INSERT INTO alarm (time, days, snooze, ringtone_id)
-      SELECT '09:00 AM', 'Thu,Fri', 10, 1
-      WHERE NOT EXISTS (SELECT 1 FROM alarm WHERE time = '09:00 AM');
-    `);
-
-    await db.run(`
-      INSERT INTO alarm (time, days, snooze, ringtone_id)
-      SELECT '06:15 AM', 'Sat,Sun', 0, 1
-      WHERE NOT EXISTS (SELECT 1 FROM alarm WHERE time = '06:15 AM');
-    `);
-
-    // ✅ Insert a recording
+    // ✅ Insert recording
     await db.run(`
       INSERT INTO recording (audio, length)
       SELECT 'audio1.mp3', 180
       WHERE NOT EXISTS (SELECT 1 FROM recording);
     `);
 
-    // ✅ Insert tags
-    await db.run(`
-      INSERT INTO tag (name, type, color)
-      SELECT 'Happy', 'mood', '#0dff00'
-      WHERE NOT EXISTS (SELECT 1 FROM tag WHERE name = 'Happy');
-    `);
+    // ✅ Insert mood tags
+    const moodTags = [
+      { name: 'Happy', color: '#0dff00' },
+      { name: 'Grateful', color: '#ff9900' },
+      { name: 'Relaxed', color: '#0099ff' },
+    ];
 
-    await db.run(`
-      INSERT INTO tag (name, type, color)
-      SELECT 'Grateful', 'mood', '#ff9900'
-      WHERE NOT EXISTS (SELECT 1 FROM tag WHERE name = 'Grateful');
-    `);
+    for (const tag of moodTags) {
+      await db.run(`
+        INSERT INTO tag (name, type, color)
+        SELECT '${tag.name}', 'mood', '${tag.color}'
+        WHERE NOT EXISTS (SELECT 1 FROM tag WHERE name = '${tag.name}');
+      `);
+    }
 
-    await db.run(`
-      INSERT INTO tag (name, type, color)
-      SELECT 'Relaxed', 'mood', '#0099ff'
-      WHERE NOT EXISTS (SELECT 1 FROM tag WHERE name = 'Relaxed');
-    `);
+    // ✅ Insert people tags
+    const peopleTags = [
+      { name: 'Family', color: '' },
+      { name: 'Friends', color: '' },
+      { name: 'Partner', color: '' },
+      { name: 'Colleagues', color: '' },
+    ];
 
-    // ✅ Insert multiple entries across May, June, July
+    for (const tag of peopleTags) {
+      await db.run(`
+        INSERT INTO tag (name, type, color)
+        SELECT '${tag.name}', 'people', '${tag.color}'
+        WHERE NOT EXISTS (SELECT 1 FROM tag WHERE name = '${tag.name}');
+      `);
+    }
+
+    // ✅ Insert entries
     const entries = [
       { pinned: 1, time: '2025-05-10T08:00:00', content: 'May entry one.', recording_id: 1 },
       { pinned: 0, time: '2025-05-15T09:15:00', content: 'May entry two.', recording_id: 1 },
@@ -146,51 +146,68 @@ export const createDummyData = async () => {
       { pinned: 0, time: '2025-07-10T09:00:00', content: 'July entry three.', recording_id: 1 },
     ];
 
+    const insertedEntryIds: Record<string, number> = {};
+
     for (const entry of entries) {
       await db.run(`
         INSERT INTO entry (pinned, time, content, recording_id)
         SELECT ${entry.pinned}, '${entry.time}', '${entry.content}', ${entry.recording_id}
         WHERE NOT EXISTS (SELECT 1 FROM entry WHERE time = '${entry.time}');
       `);
-    }
 
-    // ✅ Link entries to tags
-    const tagLinks = [
-      { entryTime: '2025-05-10T08:00:00', tagName: 'Happy' },
-      { entryTime: '2025-06-01T07:45:00', tagName: 'Grateful' },
-      { entryTime: '2025-07-01T06:30:00', tagName: 'Relaxed' },
-      { entryTime: '2025-07-10T09:00:00', tagName: 'Happy' },
-    ];
-
-    for (const link of tagLinks) {
-      await db.run(`
-        INSERT INTO entry_tag (entry_id, tag_id)
-        SELECT e.entry_id, t.tag_id
-        FROM entry e, tag t
-        WHERE e.time = '${link.entryTime}' AND t.name = '${link.tagName}'
-        AND NOT EXISTS (
-          SELECT 1 FROM entry_tag WHERE entry_id = e.entry_id AND tag_id = t.tag_id
-        );
+      const result = await db.get<{ entry_id: number }>(`
+        SELECT entry_id FROM entry WHERE time = '${entry.time}';
       `);
+
+      if (result?.entry_id) {
+        insertedEntryIds[entry.time] = result.entry_id;
+      }
     }
 
-    // ✅ Insert dummy summary
+    // ✅ Get all tag IDs
+    const allTags = await db.all<{ tag_id: number, type: string }>(`SELECT tag_id, type FROM tag;`);
+
+    // ✅ Link entries to random 3–8 tags each
+    for (const entryTime of Object.keys(insertedEntryIds)) {
+      const entryId = insertedEntryIds[entryTime];
+
+      // Shuffle tags & pick random 3–8
+      const shuffled = allTags.sort(() => 0.5 - Math.random());
+      const selectedTags = shuffled.slice(0, Math.floor(Math.random() * 6) + 3); // 3–8
+
+      for (const tag of selectedTags) {
+        await db.run(`
+          INSERT INTO entry_tag (entry_id, tag_id)
+          SELECT ${entryId}, ${tag.tag_id}
+          WHERE NOT EXISTS (
+            SELECT 1 FROM entry_tag WHERE entry_id = ${entryId} AND tag_id = ${tag.tag_id}
+          );
+        `);
+      }
+    }
+
+    // ✅ Insert summary & link to one entry
     await db.run(`
       INSERT INTO summary (start_date, range, summary, image)
       SELECT '2025-07-01', 7, 'This is a weekly summary.', 'image.png'
       WHERE NOT EXISTS (SELECT 1 FROM summary);
     `);
 
-    // ✅ Link summary to one entry
-    await db.run(`
-      INSERT INTO summary_entry (summary_id, entry_id)
-      SELECT 1, 1
-      WHERE NOT EXISTS (
-        SELECT 1 FROM summary_entry WHERE summary_id = 1 AND entry_id = 1
-      );
+    const summary = await db.get<{ summary_id: number }>(`
+      SELECT summary_id FROM summary WHERE start_date = '2025-07-01';
     `);
 
-    console.log('✅ Dummy data created with multiple entries & months!');
+    if (summary?.summary_id && insertedEntryIds['2025-07-01T06:30:00']) {
+      await db.run(`
+        INSERT INTO summary_entry (summary_id, entry_id)
+        SELECT ${summary.summary_id}, ${insertedEntryIds['2025-07-01T06:30:00']}
+        WHERE NOT EXISTS (
+          SELECT 1 FROM summary_entry WHERE summary_id = ${summary.summary_id} AND entry_id = ${insertedEntryIds['2025-07-01T06:30:00']}
+        );
+      `);
+    }
+
+    console.log('✅ Dummy data created: each entry has multiple moods & people tags!');
   } catch (err) {
     console.error('❌ Error creating dummy data:', err);
   }
@@ -198,13 +215,13 @@ export const createDummyData = async () => {
 
 
 export const clearDatabase = async () => {
-    await db.run('DROP TABLE IF EXISTS recording');
-    await db.run('DROP TABLE IF EXISTS ringtone');
-    await db.run('DROP TABLE IF EXISTS alarm');
-    await db.run('DROP TABLE IF EXISTS entry');
-    await db.run('DROP TABLE IF EXISTS tag');
-    await db.run('DROP TABLE IF EXISTS entry_tag');
-    await db.run('DROP TABLE IF EXISTS summary');
-    await db.run('DROP TABLE IF EXISTS summary_entry');
-    console.log('All tables cleared!');
+  await db.run('DROP TABLE IF EXISTS recording');
+  await db.run('DROP TABLE IF EXISTS ringtone');
+  await db.run('DROP TABLE IF EXISTS alarm');
+  await db.run('DROP TABLE IF EXISTS entry');
+  await db.run('DROP TABLE IF EXISTS tag');
+  await db.run('DROP TABLE IF EXISTS entry_tag');
+  await db.run('DROP TABLE IF EXISTS summary');
+  await db.run('DROP TABLE IF EXISTS summary_entry');
+  console.log('All tables cleared!');
 };
