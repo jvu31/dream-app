@@ -11,7 +11,7 @@ export const colors = {
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 32,
+    paddingHorizontal: 18,
     gap: 16,
     backgroundColor: colors.background,
   },
@@ -37,6 +37,12 @@ export const styles = StyleSheet.create({
     fontSize: 20,
     color: colors.text,
   },
+  h6: {
+    fontWeight: '800',
+    fontSize: 24,
+    color: colors.text,
+  },
+
 });
 
 export default styles;

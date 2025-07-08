@@ -83,33 +83,32 @@ export const initDatabase = async () => {
 
 export const createDummyData = async () => {
   try {
-    // ✅ Insert ringtone
+    // 🔔 Insert ringtone
     await db.run(`
       INSERT INTO ringtone (track, volume)
       SELECT 'Morning Tune', 70
       WHERE NOT EXISTS (SELECT 1 FROM ringtone);
     `);
 
-    // ✅ Insert alarms
+    // 🔔 Insert alarm
     await db.run(`
       INSERT INTO alarm (time, days, snooze, ringtone_id)
       SELECT '07:30 AM', 'Mon,Tue,Wed', 5, 1
       WHERE NOT EXISTS (SELECT 1 FROM alarm WHERE time = '07:30 AM');
     `);
 
-    // ✅ Insert recording
+    // 🔈 Insert recording
     await db.run(`
       INSERT INTO recording (audio, length)
       SELECT 'audio1.mp3', 180
       WHERE NOT EXISTS (SELECT 1 FROM recording);
     `);
 
-    // ✅ Insert mood tags
+    // ✅ Insert ~15 mood tags
     const moodTags = [
-      { name: 'Happy', color: '#0dff00' },
-      { name: 'Grateful', color: '#ff9900' },
-      { name: 'Relaxed', color: '#0099ff' },
-    ];
+      'Happy','Grateful','Relaxed','Excited','Motivated','Reflective','Focused',
+      'Calm','Adventurous','Energetic','Peaceful','Inspired','Hopeful','Content','Playful'
+    ].map((name, i) => ({ name, color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6,'0')}` }));
 
     for (const tag of moodTags) {
       await db.run(`
@@ -119,13 +118,11 @@ export const createDummyData = async () => {
       `);
     }
 
-    // ✅ Insert people tags
+    // ✅ Insert ~20 people tags
     const peopleTags = [
-      { name: 'Family', color: '' },
-      { name: 'Friends', color: '' },
-      { name: 'Partner', color: '' },
-      { name: 'Colleagues', color: '' },
-    ];
+      'Alice','Bob','Charlie','David','Ella','Frank','Grace','Hannah','Isaac',
+      'Jack','Kara','Liam','Mia','Noah','Olivia','Paul','Quinn','Riley','Sophie','Tom'
+    ].map((name) => ({ name, color: '#cccccc' }));
 
     for (const tag of peopleTags) {
       await db.run(`
@@ -135,23 +132,39 @@ export const createDummyData = async () => {
       `);
     }
 
-    // ✅ Insert entries
-    const entries = [
-      { pinned: 1, time: '2025-05-10T08:00:00', content: 'May entry one.', recording_id: 1 },
-      { pinned: 0, time: '2025-05-15T09:15:00', content: 'May entry two.', recording_id: 1 },
-      { pinned: 0, time: '2025-06-01T07:45:00', content: 'June entry one.', recording_id: 1 },
-      { pinned: 0, time: '2025-06-15T10:30:00', content: 'June entry two.', recording_id: 1 },
-      { pinned: 1, time: '2025-07-01T06:30:00', content: 'July entry one.', recording_id: 1 },
-      { pinned: 0, time: '2025-07-05T08:00:00', content: 'July entry two.', recording_id: 1 },
-      { pinned: 0, time: '2025-07-10T09:00:00', content: 'July entry three.', recording_id: 1 },
-    ];
+    // ✅ Insert lots of entries for May–July
+    const entries = [];
+    const startDate = new Date('2025-05-01');
+    const endDate = new Date('2025-07-31');
+
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const entriesPerDay = Math.random() < 0.7 ? 2 : 1; // 70% chance of 2 entries
+      for (let i = 0; i < entriesPerDay; i++) {
+        const hour = Math.floor(Math.random() * 12) + 6; // 6 AM – 6 PM
+        const minute = Math.floor(Math.random() * 60);
+        const time = new Date(d);
+        time.setHours(hour, minute, 0, 0);
+
+        // Pick random people to mention in content
+        const randomPeople = peopleTags.sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 3) + 1);
+        const content = `Today I spent time with ${randomPeople.map(p => p.name).join(', ')}. We had a great conversation and I felt very ${moodTags[Math.floor(Math.random() * moodTags.length)].name.toLowerCase()}. This entry is longer to simulate realistic journaling notes and includes some details about our day together.`
+
+        entries.push({
+          pinned: Math.random() < 0.1 ? 1 : 0,
+          time: time.toISOString(),
+          content,
+          recording_id: 1,
+          peopleInContent: randomPeople.map(p => p.name),
+        });
+      }
+    }
 
     const insertedEntryIds: Record<string, number> = {};
 
     for (const entry of entries) {
       await db.run(`
         INSERT INTO entry (pinned, time, content, recording_id)
-        SELECT ${entry.pinned}, '${entry.time}', '${entry.content}', ${entry.recording_id}
+        SELECT ${entry.pinned}, '${entry.time}', '${entry.content.replace(/'/g, "''")}', ${entry.recording_id}
         WHERE NOT EXISTS (SELECT 1 FROM entry WHERE time = '${entry.time}');
       `);
 
@@ -164,32 +177,37 @@ export const createDummyData = async () => {
       }
     }
 
-    // ✅ Get all tag IDs
-    const allTags = await db.all<{ tag_id: number, type: string }>(`SELECT tag_id, type FROM tag;`);
+    // ✅ Get tag IDs
+    const allTags = await db.all<{ tag_id: number, name: string, type: string }>(`SELECT tag_id, name, type FROM tag;`);
 
-    // ✅ Link entries to random 3–8 tags each
-    for (const entryTime of Object.keys(insertedEntryIds)) {
-      const entryId = insertedEntryIds[entryTime];
+    // ✅ Link entries to 3–8 tags each, ensuring people from content are included
+    for (const entry of entries) {
+      const entryId = insertedEntryIds[entry.time];
+      if (!entryId) continue;
 
-      // Shuffle tags & pick random 3–8
-      const shuffled = allTags.sort(() => 0.5 - Math.random());
-      const selectedTags = shuffled.slice(0, Math.floor(Math.random() * 6) + 3); // 3–8
+      // Get tag IDs for people mentioned
+      const peopleTagIds = allTags.filter(t => t.type === 'people' && entry.peopleInContent.includes(t.name)).map(t => t.tag_id);
 
-      for (const tag of selectedTags) {
+      // Pick random moods
+      const moodTagIds = allTags.filter(t => t.type === 'mood').sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 5) + 2).map(t => t.tag_id);
+
+      const finalTags = [...peopleTagIds, ...moodTagIds];
+
+      for (const tagId of finalTags) {
         await db.run(`
           INSERT INTO entry_tag (entry_id, tag_id)
-          SELECT ${entryId}, ${tag.tag_id}
+          SELECT ${entryId}, ${tagId}
           WHERE NOT EXISTS (
-            SELECT 1 FROM entry_tag WHERE entry_id = ${entryId} AND tag_id = ${tag.tag_id}
+            SELECT 1 FROM entry_tag WHERE entry_id = ${entryId} AND tag_id = ${tagId}
           );
         `);
       }
     }
 
-    // ✅ Insert summary & link to one entry
+    // ✅ Insert summary
     await db.run(`
       INSERT INTO summary (start_date, range, summary, image)
-      SELECT '2025-07-01', 7, 'This is a weekly summary.', 'image.png'
+      SELECT '2025-07-01', 7, 'Weekly summary of interesting days.', 'image.png'
       WHERE NOT EXISTS (SELECT 1 FROM summary);
     `);
 
@@ -197,21 +215,24 @@ export const createDummyData = async () => {
       SELECT summary_id FROM summary WHERE start_date = '2025-07-01';
     `);
 
-    if (summary?.summary_id && insertedEntryIds['2025-07-01T06:30:00']) {
+    // ✅ Link summary to a random entry
+    const someEntryId = Object.values(insertedEntryIds)[0];
+    if (summary?.summary_id && someEntryId) {
       await db.run(`
         INSERT INTO summary_entry (summary_id, entry_id)
-        SELECT ${summary.summary_id}, ${insertedEntryIds['2025-07-01T06:30:00']}
+        SELECT ${summary.summary_id}, ${someEntryId}
         WHERE NOT EXISTS (
-          SELECT 1 FROM summary_entry WHERE summary_id = ${summary.summary_id} AND entry_id = ${insertedEntryIds['2025-07-01T06:30:00']}
+          SELECT 1 FROM summary_entry WHERE summary_id = ${summary.summary_id} AND entry_id = ${someEntryId}
         );
       `);
     }
 
-    console.log('✅ Dummy data created: each entry has multiple moods & people tags!');
+    console.log(`✅ Created ~${entries.length} entries with multiple tags each!`);
   } catch (err) {
-    console.error('❌ Error creating dummy data:', err);
+    console.error('❌ Error creating big dummy data:', err);
   }
 };
+
 
 
 export const clearDatabase = async () => {

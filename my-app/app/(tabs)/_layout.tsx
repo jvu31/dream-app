@@ -4,6 +4,7 @@ import { SafeAreaView, View } from 'react-native';
 import React, { useEffect } from 'react';
 import '../../global.css';
 import { initDatabase, createDummyData, clearDatabase } from 'db/initialization';
+import { colors } from 'styles';
 
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -25,7 +26,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarShowLabel: true,
-        tabBarActiveTintColor: 'white',
+        tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
           backgroundColor: '#2b2435',
@@ -56,8 +57,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="calendar"
         options={{
-          title: 'Calendar',
-          tabBarIcon: ({ color }) => <TabBarIcon name="calendar" color={color} />,
+          title: 'Stats',
+          tabBarIcon: ({ color }) => <TabBarIcon name="signal" color={color} />,
         }}
       />
     </Tabs>

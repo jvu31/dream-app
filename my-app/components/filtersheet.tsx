@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { colors, styles } from 'styles';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { fetchAllTags } from 'db/queries';
+import Tag from 'components/tag';
 
 
 interface Props {
@@ -29,7 +30,7 @@ export default function FilterSheet({}) {
     };
 
     fetchTags();
-  }, [])
+  }, []);
 
   // Saves the mood and people tags from the fetched tags
   useEffect(() => {
@@ -50,8 +51,35 @@ export default function FilterSheet({}) {
   }, [tagFilters]);
 
   return (
-    <View>
-      <Text>FilterSheet</Text>
+    <View style={styles.container}>
+      <Text style={[styles.h6, { textAlign: 'center' }]}>Filters</Text>
+      {/* Date range picker */}
+      <View>
+        <Text style={[styles.h6, { opacity:.5 }]}>Date</Text>
+
+      </View>
+      {/* Moods */}
+      <View style={{ marginBottom: 16, gap: 4 }}>
+        <Text style={[styles.h6, { opacity:.5 }]}>Moods</Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {moods.map((mood) => (
+            <Tag
+              key={mood.tagId}
+              tag={mood.name}
+              color1={mood.color}
+              onPress={() => {}}
+              active={tagFilters.includes(mood.tagId)}/>
+          ))}
+
+
+        </View>
+
+      </View>
+      {/* People */}
+      <View>
+        <Text style={[styles.h6, { opacity:.5 }]}>People</Text>
+
+      </View>
     </View>
   );
 }
