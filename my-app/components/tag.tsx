@@ -6,10 +6,11 @@ interface Props {
   tag: string;
   color1: string;
   active: boolean;
+  type: string;
   onPress: () => void;
 }
 
-export default function Tag({ tag, color1, active, onPress }: Props) {
+export default function Tag({ tag, color1, active, type, onPress }: Props) {
   function darkenHexColor(hex, factor) {
     return (
       '#' +
@@ -22,7 +23,9 @@ export default function Tag({ tag, color1, active, onPress }: Props) {
         .join('')
     );
   }
-  if (!color1) {
+
+  // Tag for people (differs with no background)
+  if (type==='people') {
     return (
       <TouchableOpacity onPress={onPress}>
         <View
@@ -33,6 +36,7 @@ export default function Tag({ tag, color1, active, onPress }: Props) {
     );
   }
 
+  // Tag for moods (with pill background)
   return (
     <TouchableOpacity onPress={onPress} style={{ borderRadius: 10 }}>
       <View>
@@ -40,7 +44,7 @@ export default function Tag({ tag, color1, active, onPress }: Props) {
           colors={[color1, darkenHexColor(color1, 0.7)]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={{ alignItems: 'center', justifyContent: 'center', borderRadius: 10, padding: 3 }}>
+          style={{ alignItems: 'center', justifyContent: 'center', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 6 }}>
           <Text style={styles.h4}>{tag}</Text>
         </LinearGradient>
       </View>

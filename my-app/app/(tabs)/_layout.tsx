@@ -37,6 +37,9 @@ export default function TabLayout() {
           height: 60,
           position: 'absolute',
           overflow: 'hidden',
+          elevation: 0,
+          shadowColor: 'transparent',
+          shadowOpacity: 0,
         },
         headerShown: false,
       }}>

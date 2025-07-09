@@ -29,7 +29,7 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
       try {
         const data = await fetchEntryTags(entry_id);
         setTags(data);
-        console.log('Tags fetched!');
+        //console.log('Tags fetched!');
       } catch (error) {
         console.error('Error fetching tags:', error);
       }
@@ -53,7 +53,7 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
     setMoods(grouped['mood'] || []);
     setPeople(grouped['people'] || []);
 
-    console.log('Tags grouped!');
+    //console.log('Tags grouped!');
   }, [tags]);
 
   // Fetches the entry's audio recording
@@ -62,7 +62,7 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
       try {
         const data: any = await fetchRecording(recording_id);
         setAudio(data);
-        console.log('Audio recording fetched!');
+        //console.log('Audio recording fetched!');
       } catch (error) {
         console.error('Error fetching audio recording:', error);
       }
@@ -131,7 +131,7 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
             <FlatList
               data={moods}
               renderItem={({ item }) => (
-                <Tag tag={item.name} color1={item.color} active={true} onPress={test} />
+                <Tag tag={item.name} color1={item.color} type="mood" active={true} onPress={test} />
               )}
               keyExtractor={(item) => item.tagId.toString()}
               horizontal={true}
@@ -143,7 +143,7 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
             <FlatList
               data={people}
               renderItem={({ item }) => (
-                <Tag tag={item.name} color1={item.color} active={true} onPress={test} />
+                <Tag tag={item.name} color1={item.color} type="people" active={true} onPress={test} />
               )}
               keyExtractor={(item) => item.tagId.toString()}
               horizontal={true}

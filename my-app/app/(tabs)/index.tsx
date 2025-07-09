@@ -224,7 +224,7 @@ export default function Home() {
           enablePanDownToClose
           backdropComponent={renderBackdrop}
           backgroundStyle={{
-            backgroundColor: 'rgba(43, 36, 53, 0.6)',
+            backgroundColor: colors.secondary,
           }}
           handleIndicatorStyle={{
             backgroundColor: 'rgba(255, 255, 255, 1)',

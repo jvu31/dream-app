@@ -1,7 +1,6 @@
 import { Text, View, TouchableOpacity, TextInput } from 'react-native';
 import { useState, useEffect } from 'react';
 import { colors, styles } from 'styles';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { fetchAllTags } from 'db/queries';
 import Tag from 'components/tag';
 
@@ -51,7 +50,7 @@ export default function FilterSheet({}) {
   }, [tagFilters]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {backgroundColor: 'transparent'}]}>
       <Text style={[styles.h6, { textAlign: 'center' }]}>Filters</Text>
       {/* Date range picker */}
       <View>
@@ -68,6 +67,7 @@ export default function FilterSheet({}) {
               tag={mood.name}
               color1={mood.color}
               onPress={() => {}}
+              type="mood"
               active={tagFilters.includes(mood.tagId)}/>
           ))}
 

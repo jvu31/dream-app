@@ -14,6 +14,7 @@ export default function Toggle({ option1, option2, returnValue }: Props) {
   const updateValue = (value: string) => {
     setSelectedOption(value);
     returnValue(value);
+    console.log("-------------------PAGE CHANGE-------------------")
   };
 
   return (
