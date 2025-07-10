@@ -53,6 +53,7 @@ export default function AlarmScreen() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, 0.5) ' }]}>
         <Header />
+        <Text style={styles.h7}>Alarms</Text>
         {/* List of Alarms */}
         {alarms.map((alarm) => (
           <AlarmView

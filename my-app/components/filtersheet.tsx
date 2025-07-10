@@ -4,7 +4,6 @@ import { colors, styles } from 'styles';
 import { fetchAllTags } from 'db/queries';
 import Tag from 'components/tag';
 
-
 interface Props {
   setTagFilters: (tags: number[]) => void;
   dateRange: (dates: string[]) => void;
@@ -50,35 +49,31 @@ export default function FilterSheet({}) {
   }, [tagFilters]);
 
   return (
-    <View style={[styles.container, {backgroundColor: 'transparent'}]}>
+    <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <Text style={[styles.h6, { textAlign: 'center' }]}>Filters</Text>
       {/* Date range picker */}
       <View>
-        <Text style={[styles.h6, { opacity:.5 }]}>Date</Text>
-
+        <Text style={[styles.h6, { opacity: 0.5 }]}>Date</Text>
       </View>
       {/* Moods */}
       <View style={{ marginBottom: 16, gap: 4 }}>
-        <Text style={[styles.h6, { opacity:.5 }]}>Moods</Text>
+        <Text style={[styles.h6, { opacity: 0.5 }]}>Moods</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {moods.map((mood) => (
             <Tag
-              key={mood.tagId}
+              key={mood.tag_id}
               tag={mood.name}
               color1={mood.color}
               onPress={() => {}}
               type="mood"
-              active={tagFilters.includes(mood.tagId)}/>
+              active={tagFilters.includes(mood.tagId)}
+            />
           ))}
-
-
         </View>
-
       </View>
       {/* People */}
       <View>
-        <Text style={[styles.h6, { opacity:.5 }]}>People</Text>
-
+        <Text style={[styles.h6, { opacity: 0.5 }]}>People</Text>
       </View>
     </View>
   );

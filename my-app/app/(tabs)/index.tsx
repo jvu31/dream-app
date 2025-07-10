@@ -92,8 +92,6 @@ export default function Home() {
 
   const markedDates = useMemo(() => {
     const marks = entries.reduce((acc, entry) => {
-      // The time is a string like '2025-05-10T08:00:00'
-      // We just need the date part 'YYYY-MM-DD'
       const dateString = entry.time.split('T')[0];
       if (!acc[dateString]) {
         acc[dateString] = { dots: [], marked: true };
@@ -123,6 +121,8 @@ export default function Home() {
       <GestureHandlerRootView
         style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, 0.5)' }]}>
         <Header />
+        {/* Title Header */}
+        <Text style={styles.h7}>Journal Entries</Text>
         {/* Search bar */}
         <SearchBar setSearchValue={setSearchValue} openFilters={openFilters} />
         {/* Toggle between list view and calendar view */}

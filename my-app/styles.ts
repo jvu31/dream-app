@@ -42,6 +42,12 @@ export const styles = StyleSheet.create({
     fontSize: 24,
     color: colors.text,
   },
+  h7: {
+    fontWeight: '800',
+    fontSize: 48,
+    color: colors.text,
+  }
+  
 
 });
 

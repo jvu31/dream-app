@@ -3,7 +3,9 @@ import { styles, colors } from 'styles';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Tag from '../components/tag';
 import { fetchEntryTags, fetchRecording } from 'db/queries';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'expo-router';
+import { convertSecondsToMinutesAndSeconds } from './utils';
 
 interface Props {
   entry_id: number;
@@ -13,7 +15,13 @@ interface Props {
   recording_id: number;
 }
 
-export default function EntryView({ entry_id, icon, time, content, recording_id }: Props) {
+const EntryView = React.memo(function EntryView({
+  entry_id,
+  icon,
+  time,
+  content,
+  recording_id,
+}: Props) {
   const test = () => {};
   const date = new Date(time);
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -70,91 +78,98 @@ export default function EntryView({ entry_id, icon, time, content, recording_id 
     fetchAudio();
   }, []);
 
-  function convertSecondsToMinutesAndSeconds(totalSeconds) {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-
-    const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
-
-    return `${minutes}:${formattedSeconds}`;
-  }
-
   return (
-    <TouchableOpacity
-      style={{
-        backgroundColor: colors.secondary,
-        padding: 16,
-        borderRadius: 20,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: {
-          width: 0,
-          height: 2,
-        },
-      }}>
-      <View
+    <Link href={`entry/${entry_id}`} asChild>
+      <TouchableOpacity
         style={{
-          flexDirection: 'row',
-          gap: 16,
-          flexWrap: 'nowrap',
-          alignItems: 'center',
+          backgroundColor: colors.secondary,
+          padding: 16,
+          borderRadius: 20,
+          overflow: 'hidden',
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
         }}>
-        {/* Icon & day */}
-        <View style={{ alignItems: 'center', flexShrink: 0 }}>
-          <FontAwesome name="smile-o" size={60} color="white" style={{ opacity: 0.5 }} />
-          <Text style={[styles.h2, { opacity: 0.5 }]}>{day}</Text>
-        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            gap: 16,
+            flexWrap: 'nowrap',
+            alignItems: 'center',
+          }}>
+          {/* Icon & day */}
+          <View style={{ alignItems: 'center', flexShrink: 0 }}>
+            <FontAwesome name="smile-o" size={60} color="white" style={{ opacity: 0.5 }} />
+            <Text style={[styles.h2, { opacity: 0.5 }]}>{day}</Text>
+          </View>
 
-        {/* Content */}
-        <View style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}>
-            <Text
-              style={
-                styles.h2
-              }>{`${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')} ${date.getHours() >= 12 ? 'PM' : 'AM'}`}</Text>
-            <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={1} ellipsizeMode="tail">
-              {convertSecondsToMinutesAndSeconds(audio.length)}
+          {/* Content */}
+          <View style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+              }}>
+              <Text
+                style={
+                  styles.h2
+                }>{`${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')} ${date.getHours() >= 12 ? 'PM' : 'AM'}`}</Text>
+              <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={1} ellipsizeMode="tail">
+                {convertSecondsToMinutesAndSeconds(audio.length)}
+              </Text>
+            </View>
+
+            <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={2} ellipsizeMode="tail">
+              {content}
             </Text>
-          </View>
 
-          <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={2} ellipsizeMode="tail">
-            {content}
-          </Text>
-
-          <View style={{ marginTop: 8 }}>
-            <FlatList
-              data={moods}
-              renderItem={({ item }) => (
-                <Tag tag={item.name} color1={item.color} type="mood" active={true} onPress={test} />
-              )}
-              keyExtractor={(item) => item.tagId.toString()}
-              horizontal={true}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                gap: 8,
-              }}
-            />
-            <FlatList
-              data={people}
-              renderItem={({ item }) => (
-                <Tag tag={item.name} color1={item.color} type="people" active={true} onPress={test} />
-              )}
-              keyExtractor={(item) => item.tagId.toString()}
-              horizontal={true}
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{
-                gap: 8,
-              }}
-            />
+            <View style={{ marginTop: 8 }}>
+              <FlatList
+                data={moods}
+                renderItem={({ item }) => (
+                  <Tag
+                    tag={item.name}
+                    color1={item.color}
+                    type="mood"
+                    active={true}
+                    onPress={test}
+                  />
+                )}
+                keyExtractor={(item) => item.tagId.toString()}
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  gap: 8,
+                }}
+              />
+              <FlatList
+                data={people}
+                renderItem={({ item }) => (
+                  <Tag
+                    tag={item.name}
+                    color1={item.color}
+                    type="people"
+                    active={true}
+                    onPress={test}
+                  />
+                )}
+                keyExtractor={(item) => item.tagId.toString()}
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  gap: 8,
+                }}
+              />
+            </View>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Link>
   );
-}
+});
+
+export default EntryView;

@@ -6,15 +6,6 @@ export const recording = sqliteTable('recording', {
     length: integer('length')
 })
 
-/*
-export const content = sqliteTable('content', {
-    content_id: integer('content_id').primaryKey({ autoIncrement: true }),
-    time: text('time'),
-    content: text('content'),
-    recording_id: integer('recording_id')
-        .references(() => recording.recording_id, { onDelete: 'cascade' }),
-})*/
-
 export const ringtone = sqliteTable('ringtone', {
     ringtone_id: integer('ringtone_id').primaryKey({ autoIncrement: true }),
     track: text('track'),
