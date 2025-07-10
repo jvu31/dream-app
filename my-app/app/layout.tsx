@@ -1,7 +1,5 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'react-native';
-import { initDatabase } from 'db/initialization';
-import { useEffect } from 'react'
 
 export default function RootLayout() {
 
@@ -11,12 +9,9 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: {
-            backgroundColor: '#FFFFFF',
-          },
-          
         }}>
         <Stack.Screen name="(tabs)"/>
+        <Stack.Screen name="entry/[id]"/>
       </Stack>
     </>
   );

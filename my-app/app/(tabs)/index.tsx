@@ -10,6 +10,7 @@ import { fetchAllEntriesTest } from 'db/queries';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Calendar, DateData } from 'react-native-calendars';
+import { parseMonth } from 'components/utils';
 
 export default function Home() {
   const [entries, setEntries] = useState([]);
@@ -136,11 +137,7 @@ export default function Home() {
               renderItem={({ item }) => (
                 <View style={{ marginBottom: 8, gap: 4 }}>
                   <Text style={[styles.h2, { opacity: 0.5 }]}>
-                    {new Date(item.time).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
+                    {parseMonth(item.time)}
                   </Text>
                   <EntryView
                     entry_id={item.entry_id}

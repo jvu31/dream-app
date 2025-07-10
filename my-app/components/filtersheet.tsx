@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { colors, styles } from 'styles';
 import { fetchAllTags } from 'db/queries';
 import Tag from 'components/tag';
+import { groupTags } from 'components/utils';
+
 
 interface Props {
   setTagFilters: (tags: number[]) => void;
@@ -34,13 +36,7 @@ export default function FilterSheet({}) {
   useEffect(() => {
     if (tagFilters.length === 0) return;
 
-    const grouped = tagFilters.reduce((acc, entry) => {
-      if (!acc[entry.type]) {
-        acc[entry.type] = [];
-      }
-      acc[entry.type].push(entry);
-      return acc;
-    }, {});
+    const grouped = groupTags(tagFilters)
 
     setMoods(grouped['mood'] || []);
     setPeople(grouped['people'] || []);

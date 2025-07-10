@@ -5,7 +5,7 @@ import Tag from '../components/tag';
 import { fetchEntryTags, fetchRecording } from 'db/queries';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'expo-router';
-import { convertSecondsToMinutesAndSeconds } from './utils';
+import { convertSecondsToMinutesAndSeconds, groupTags, parseDay, parseTime } from './utils';
 
 interface Props {
   entry_id: number;
@@ -23,9 +23,6 @@ const EntryView = React.memo(function EntryView({
   recording_id,
 }: Props) {
   const test = () => {};
-  const date = new Date(time);
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const day = daysOfWeek[date.getDay()];
   const [tags, setTags] = useState([]);
   const [moods, setMoods] = useState([]);
   const [people, setPeople] = useState([]);
@@ -50,13 +47,7 @@ const EntryView = React.memo(function EntryView({
   useEffect(() => {
     if (tags.length === 0) return;
 
-    const grouped = tags.reduce((acc, entry) => {
-      if (!acc[entry.type]) {
-        acc[entry.type] = [];
-      }
-      acc[entry.type].push(entry);
-      return acc;
-    }, {});
+    const grouped = groupTags(tags)
 
     setMoods(grouped['mood'] || []);
     setPeople(grouped['people'] || []);
@@ -102,7 +93,7 @@ const EntryView = React.memo(function EntryView({
           {/* Icon & day */}
           <View style={{ alignItems: 'center', flexShrink: 0 }}>
             <FontAwesome name="smile-o" size={60} color="white" style={{ opacity: 0.5 }} />
-            <Text style={[styles.h2, { opacity: 0.5 }]}>{day}</Text>
+            <Text style={[styles.h2, { opacity: 0.5 }]}>{parseDay(time)}</Text>
           </View>
 
           {/* Content */}
@@ -117,7 +108,7 @@ const EntryView = React.memo(function EntryView({
               <Text
                 style={
                   styles.h2
-                }>{`${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')} ${date.getHours() >= 12 ? 'PM' : 'AM'}`}</Text>
+                }>{parseTime(time)}</Text>
               <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={1} ellipsizeMode="tail">
                 {convertSecondsToMinutesAndSeconds(audio.length)}
               </Text>
