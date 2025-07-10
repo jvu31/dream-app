@@ -26,6 +26,7 @@ export const entry = sqliteTable('entry', {
     pinned: integer('pinned').default(0),
     time: text('time'),
     content: text('content'),
+    title: text('title'),
     recording_id: integer('recording_id')
         .references(() => recording.recording_id, { onDelete: 'cascade' })
 })

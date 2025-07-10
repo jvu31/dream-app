@@ -24,6 +24,7 @@ export interface EntryModel {
   entry_id: number;
   pinned: number | null;
   time: string | null;
+  title: string;
   content: string | null;
   recording_id: number | null;
 }

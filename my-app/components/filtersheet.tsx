@@ -62,7 +62,7 @@ export default function FilterSheet({}) {
               color1={mood.color}
               onPress={() => {}}
               type="mood"
-              active={tagFilters.includes(mood.tagId)}
+              active={tagFilters.includes(mood.tag_id)}
             />
           ))}
         </View>

@@ -34,6 +34,7 @@ export const initDatabase = async () => {
       pinned INTEGER DEFAULT 0,
       time TEXT,
       content TEXT,
+      title TEXT,
       recording_id INTEGER,
       FOREIGN KEY(recording_id) REFERENCES recording(recording_id) ON DELETE CASCADE
     );
@@ -163,8 +164,8 @@ export const createDummyData = async () => {
 
     for (const entry of entries) {
       await db.run(`
-        INSERT INTO entry (pinned, time, content, recording_id)
-        SELECT ${entry.pinned}, '${entry.time}', '${entry.content.replace(/'/g, "''")}', ${entry.recording_id}
+        INSERT INTO entry (pinned, time, content, title, recording_id)
+        SELECT ${entry.pinned}, '${entry.time}', '${entry.content.replace(/'/g, "''")}', '', ${entry.recording_id}
         WHERE NOT EXISTS (SELECT 1 FROM entry WHERE time = '${entry.time}');
       `);
 

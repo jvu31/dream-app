@@ -4,10 +4,15 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import styles, { colors } from 'styles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useState, useEffect } from 'react';
-import { fetchEntry, fetchEntryTags, fetchRecording } from 'db/queries';
+import { useState, useEffect, useRef } from 'react';
+import { editEntry, fetchEntry, fetchEntryTags, fetchRecording } from 'db/queries';
 import { EntryModel, RecordingModel, TagModel } from 'db/interfaces';
-import { convertSecondsToMinutesAndSeconds, groupTags, parseMonth, parseTime } from 'components/utils';
+import {
+  convertSecondsToMinutesAndSeconds,
+  groupTags,
+  parseMonth,
+  parseTime,
+} from 'components/utils';
 import Tag from 'components/tag';
 
 export default function Entry() {
@@ -18,6 +23,8 @@ export default function Entry() {
   const [tags, setTags] = useState([]);
   const [moods, setMoods] = useState([]);
   const [people, setPeople] = useState([]);
+  const [currentTitle, setCurrentTitle] = useState<string>();
+  const [currentContent, setCurrentContent] = useState<string>();
 
   // Fetch the journal entry data
   useEffect(() => {
@@ -30,18 +37,18 @@ export default function Entry() {
         console.error('Error fetching entry:', error);
       }
     };
-
     fetchEntryData();
   }, [id]);
 
-  // Fetches recording data (only if there is recording data tied to entry)
+  // Sets corresponding entry data
   useEffect(() => {
     if (!entry) return;
 
+    // Fetches recording data (there can be a no recording data)
     if (entry.recording_id) {
       const fetchRecordingData = async () => {
         try {
-          const data = await fetchRecording(Number(id));
+          const data = await fetchRecording(entry.recording_id);
           setRecording(data);
           console.log('Recording fetched!');
         } catch (error) {
@@ -51,10 +58,8 @@ export default function Entry() {
 
       fetchRecordingData();
     }
-  }, [entry]);
 
-  // Fetches the tags tied to an entry
-  useEffect(() => {
+    // Fetches the tags tied to an entry
     const fetchTags = async () => {
       try {
         const data = await fetchEntryTags(Number(id));
@@ -66,7 +71,17 @@ export default function Entry() {
     };
 
     fetchTags();
-  }, []);
+
+    // Sets entry content
+    setCurrentContent(entry.content);
+
+    // Sets entry title (defaults value to time value if there is no entry tittle)
+    if (entry.title === '') {
+      setCurrentTitle(parseTime(entry.time));
+    } else {
+      setCurrentTitle(entry.title);
+    }
+  }, [entry]);
 
   // Saves the mood and people tags from the fetched tags
   useEffect(() => {
@@ -80,7 +95,15 @@ export default function Entry() {
     //console.log('Tags grouped!');
   }, [tags]);
 
-  // Handle user change in data change
+  const handleChange = async (type: string, value: any) => {
+    if (type === 'title') {
+      setCurrentTitle(value);
+      await editEntry(Number(id), value, 'title');
+    } else if (type === 'content') {
+      setCurrentContent(value);
+      await editEntry(Number(id), value, 'content');
+    }
+  }
 
   const test = () => {};
 
@@ -113,7 +136,11 @@ export default function Entry() {
         <View style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, 0.5)' }]}>
           <View style={{ gap: 8 }}>
             {/* Title of the journal entry (defaults to time if there is no title) */}
-            <Text style={[styles.h1, { marginTop: 24 }]}>{entry?.time ?? 'Loading...'}</Text>
+            <TextInput
+              style={[styles.h1, { marginTop: 24 }]}
+              value={currentTitle}
+              onChange={(e) => handleChange('title', e.nativeEvent.text)}
+            />
             {/* Audio recording information */}
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
               <Text style={[styles.h2, { opacity: 0.5 }]}>
@@ -127,8 +154,9 @@ export default function Entry() {
             <View style={{ height: '65%' }}>
               <TextInput
                 style={[styles.h2, { opacity: 0.65 }]}
-                value={entry?.content ?? 'Loading...'}
+                value={currentContent}
                 multiline={true}
+                onChange={(e) => setCurrentContent(e.nativeEvent.text)}
               />
             </View>
             {/* Tag information */}
@@ -146,7 +174,7 @@ export default function Entry() {
                       onPress={test}
                     />
                   )}
-                  keyExtractor={(item) => item.tagId.toString()}
+                  keyExtractor={(item) => item.tag_id.toString()}
                   horizontal={true}
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{
@@ -167,7 +195,7 @@ export default function Entry() {
                       onPress={test}
                     />
                   )}
-                  keyExtractor={(item) => item.tagId.toString()}
+                  keyExtractor={(item) => item.tag_id.toString()}
                   horizontal={true}
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{
@@ -178,7 +206,7 @@ export default function Entry() {
             </View>
             {/* Bottom timestamp */}
             <View>
-              <Text style={[styles.h5, { textAlign: 'center', opacity:.5 }]}>
+              <Text style={[styles.h5, { textAlign: 'center', opacity: 0.5 }]}>
                 Created {parseMonth(entry?.time)} at {parseTime(entry?.time)}
               </Text>
             </View>

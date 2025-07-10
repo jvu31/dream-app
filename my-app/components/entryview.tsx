@@ -130,7 +130,7 @@ const EntryView = React.memo(function EntryView({
                     onPress={test}
                   />
                 )}
-                keyExtractor={(item) => item.tagId.toString()}
+                keyExtractor={(item) => item.tag_id.toString()}
                 horizontal={true}
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{
@@ -148,7 +148,7 @@ const EntryView = React.memo(function EntryView({
                     onPress={test}
                   />
                 )}
-                keyExtractor={(item) => item.tagId.toString()}
+                keyExtractor={(item) => item.tag_id.toString()}
                 horizontal={true}
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{
