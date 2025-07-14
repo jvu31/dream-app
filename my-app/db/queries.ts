@@ -1,4 +1,4 @@
-import { eq, InferInsertModel, InferSelectModel, Column } from 'drizzle-orm';
+import { eq, InferInsertModel, InferSelectModel, Column, like, and, inArray } from 'drizzle-orm';
 import * as schema from './schema';
 import { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { db } from './client';
@@ -22,10 +22,8 @@ async function genericFetchOne<TTable extends SQLiteTable, TIdColumn extends Col
   return item as InferSelectModel<TTable>;
 }
 
-function genericFetchAll<TTable extends SQLiteTable>(
-  table: TTable
-) {
-  //console.log(`Building query to fetch all from ${table._.name}`);
+function genericFetchAll<TTable extends SQLiteTable>(table: TTable) {
+  //console.log(`Building query to fetch all from ${table}`);
   return db.select().from(table);
 }
 
@@ -86,20 +84,59 @@ export async function genericUpdate<
 // --- Entry Queries ---
 
 // Fetch all journal entries, can filter from a search (if query is in the content) or tags (if entry contains a tag of mood or person)
-export const fetchAllEntries = async ({
-  query,
-  tag,
-  pin,
+export const fetchAllEntries = ({
+  query = '',
+  tag = [],
+  pin = 0,
 }: {
-  query: string;
-  tag: string;
-  pin: number;
+  query?: string;
+  tag?: string[];
+  pin?: number;
 }) => {
-  return [];
+  const conditions = [];
+
+  if (query) {
+    conditions.push(like(schema.entry.content, `%${query}%`));
+    console.log("Returning query: ", conditions)
+  }
+
+  if (pin === 1) {
+    conditions.push(eq(schema.entry.pinned, 1));
+  }
+
+  let baseQuery = db.select().from(schema.entry);
+
+  let joinedQuery: any = null;
+  if (Array.isArray(tag) && tag.length > 0) {
+    joinedQuery = db
+      .select()
+      .from(schema.entry)
+      .innerJoin(
+        schema.entry_tag,
+        eq(schema.entry.entry_id, schema.entry_tag.entry_id)
+      )
+      .innerJoin(
+        schema.tag,
+        eq(schema.entry_tag.tag_id, schema.tag.tag_id)
+      );
+
+    conditions.push(inArray(schema.tag.name, tag));
+  }
+
+  if (conditions.length > 0) {
+    if (joinedQuery) {
+      return joinedQuery.where(and(...conditions));
+    } else {
+      return baseQuery.where(and(...conditions));
+    }
+  }
+
+  console.log("Returning base query: ", conditions)
+  return baseQuery;
 };
 
 export const fetchAllEntriesTest = () => {
-  return genericFetchAll(schema.entry); // Returns a query object for useLiveQuery
+  return genericFetchAll(schema.entry);
 };
 
 // Fetch a journal entry
@@ -119,14 +156,8 @@ export const removeEntry = async (id: number) => {
 
 // Edit a journal entry
 export const editEntry = async (entry_id: number, entry_data: any, entry_type: any) => {
-  genericUpdate(
-    schema.entry,
-    schema.entry.entry_id,
-    entry_id,
-    entry_type,
-    entry_data
-  );
-  console.log("Entry updated!")
+  genericUpdate(schema.entry, schema.entry.entry_id, entry_id, entry_type, entry_data);
+  console.log('Entry updated!');
 };
 
 // --- Recording Queries ---
@@ -150,7 +181,7 @@ export const removeRecording = async (id: number) => {
 
 // Fetch all alarms
 export const fetchAllAlarms = async () => {
-  return genericFetchAll(schema.alarm).all();
+  return genericFetchAll(schema.alarm);
 };
 
 // Fetch an alarm
@@ -181,7 +212,7 @@ export const removeAlarm = async (id: number) => {
 
 // Fetch all ringtones
 export const fetchAllRingtones = async () => {
-  return genericFetchAll(schema.ringtone).all();
+  return genericFetchAll(schema.ringtone);
 };
 
 // Fetch a ringtone
@@ -212,7 +243,7 @@ export const removeRingtone = async (id: number) => {
 
 // Fetch all tags
 export const fetchAllTags = async () => {
-  return genericFetchAll(schema.tag).all();
+  return genericFetchAll(schema.tag);
 };
 
 // Fetch a tag
@@ -290,7 +321,7 @@ export const removeTagFromEntry = async (entryId: number, tagId: number) => {};
 
 // Fetch all summaries
 export const fetchAllSummaries = async () => {
-  return genericFetchAll(schema.summary).all();
+  return genericFetchAll(schema.summary);
 };
 
 // Fetch a summary

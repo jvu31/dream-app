@@ -1,9 +1,10 @@
 import { Text, View, TouchableOpacity, TextInput } from 'react-native';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { colors, styles } from 'styles';
 import { fetchAllTags } from 'db/queries';
 import Tag from 'components/tag';
 import { groupTags } from 'components/utils';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
   dateRange: (dates: string[]) => void;
 }
 
-export default function FilterSheet({}) {
+const FilterSheet = React.memo(function FilterSheet({}) {
   const [tagFilters, setTagFilters] = useState([]);
   const [dateRange, setDateRange] = useState([]);
   const [moods, setMoods] = useState([]);
@@ -23,7 +24,7 @@ export default function FilterSheet({}) {
       try {
         const data = await fetchAllTags();
         setTagFilters(data);
-        console.log('Tags fetched!');
+        console.log('Tags fetched for the filter sheet!');
       } catch (error) {
         console.error('Error fetching tags:', error);
       }
@@ -73,4 +74,6 @@ export default function FilterSheet({}) {
       </View>
     </View>
   );
-}
+})
+
+export default FilterSheet

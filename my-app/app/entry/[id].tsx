@@ -95,6 +95,7 @@ export default function Entry() {
     //console.log('Tags grouped!');
   }, [tags]);
 
+  // Handle user changes to content and entry values
   const handleChange = async (type: string, value: any) => {
     if (type === 'title') {
       setCurrentTitle(value);
@@ -156,7 +157,7 @@ export default function Entry() {
                 style={[styles.h2, { opacity: 0.65 }]}
                 value={currentContent}
                 multiline={true}
-                onChange={(e) => setCurrentContent(e.nativeEvent.text)}
+                onChange={(e) => handleChange('content', e.nativeEvent.text)}
               />
             </View>
             {/* Tag information */}

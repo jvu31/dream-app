@@ -6,7 +6,7 @@ import SearchBar from '../../components/searchbar';
 import FilterSheet from 'components/filtersheet';
 import Toggle from 'components/toggle';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { fetchAllEntriesTest } from 'db/queries';
+import { fetchAllEntries } from 'db/queries';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Calendar, DateData } from 'react-native-calendars';
@@ -15,16 +15,24 @@ import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
 export default function Home() {
   // Reactively fetch entries from the database. Data will update automatically on changes.
-  const { data: entriesData } = useLiveQuery(fetchAllEntriesTest());
+  const [searchValue, setSearchValue] = useState('');
+  const [tagFilters, setTagFilters] = useState([]);
+  const entriesQuery = useMemo(() => {
+    return fetchAllEntries({
+      query: searchValue,
+      tag: tagFilters,
+      pin: 0,
+    });
+  }, [searchValue, tagFilters]);
+  const { data: entriesData } = useLiveQuery(entriesQuery);
   const entries = entriesData || [];
   const [groupedEntries, setGroupedEntries] = useState([]);
-  const [tagFilters, setTagFilters] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [dayEntries, setDayEntries] = useState([]);
-  const [searchValue, setSearchValue] = useState('');
   const [view, setView] = useState('list');
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['80%'], []);
+  const [debouncedSearchValue, setDebouncedSearchValue] = useState(searchValue);
 
   // Groups the entries based on month
   useEffect(() => {
@@ -59,6 +67,7 @@ export default function Home() {
   }, [entries]);
 
   // Set search value with debounce call to database
+  useEffect(() => {}, [searchValue]);
 
   // Renders a backdrop that closes the sheet on press
   const renderBackdrop = useCallback(
@@ -123,9 +132,7 @@ export default function Home() {
               keyExtractor={(item, index) => `${item.entry_id}-${index}`}
               renderItem={({ item }) => (
                 <View style={{ marginBottom: 8, gap: 4 }}>
-                  <Text style={[styles.h2, { opacity: 0.5 }]}>
-                    {parseMonth(item.time)}
-                  </Text>
+                  <Text style={[styles.h2, { opacity: 0.5 }]}>{parseMonth(item.time)}</Text>
                   <EntryView
                     entry_id={item.entry_id}
                     icon={item.icon}
