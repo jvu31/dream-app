@@ -11,9 +11,12 @@ import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/botto
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Calendar, DateData } from 'react-native-calendars';
 import { parseMonth } from 'components/utils';
+import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 
 export default function Home() {
-  const [entries, setEntries] = useState([]);
+  // Reactively fetch entries from the database. Data will update automatically on changes.
+  const { data: entriesData } = useLiveQuery(fetchAllEntriesTest());
+  const entries = entriesData || [];
   const [groupedEntries, setGroupedEntries] = useState([]);
   const [tagFilters, setTagFilters] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
@@ -23,28 +26,12 @@ export default function Home() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['80%'], []);
 
-  // Fetches the ids from the database
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const fetchEntries = async () => {
-        try {
-          const data = await fetchAllEntriesTest();
-          setEntries(data);
-        } catch (error) {
-          console.error('Error fetching entries:', error);
-        }
-      };
-      fetchEntries();
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, []);
-
   // Groups the entries based on month
   useEffect(() => {
-    if (entries.length === 0) return;
+    if (!entries || entries.length === 0) {
+      setGroupedEntries([]);
+      return;
+    }
 
     // Group by month
     const grouped = entries.reduce((acc, entry) => {
@@ -142,6 +129,7 @@ export default function Home() {
                   <EntryView
                     entry_id={item.entry_id}
                     icon={item.icon}
+                    title={item.title}
                     time={item.time}
                     content={item.content}
                     recording_id={item.recording_id}
@@ -196,6 +184,7 @@ export default function Home() {
                         entry_id={item.entry_id}
                         icon={item.icon}
                         time={item.time}
+                        title={item.title}
                         content={item.content}
                         recording_id={item.recording_id}
                       />

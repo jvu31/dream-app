@@ -11,6 +11,7 @@ interface Props {
   entry_id: number;
   icon: string;
   time: string;
+  title: string;
   content: string;
   recording_id: number;
 }
@@ -18,6 +19,7 @@ interface Props {
 const EntryView = React.memo(function EntryView({
   entry_id,
   icon,
+  title,
   time,
   content,
   recording_id,
@@ -27,6 +29,7 @@ const EntryView = React.memo(function EntryView({
   const [moods, setMoods] = useState([]);
   const [people, setPeople] = useState([]);
   const [audio, setAudio] = useState([]);
+  const [currentTitle, setCurrentTitle] = useState<string>()
 
   // Fetches the tags tied to an entry
   useEffect(() => {
@@ -41,6 +44,12 @@ const EntryView = React.memo(function EntryView({
     };
 
     fetchTags();
+
+    if (title === '') {
+      setCurrentTitle(parseTime(time));
+    } else {
+      setCurrentTitle(title);
+    }
   }, []);
 
   // Saves the mood and people tags from the fetched tags
@@ -108,7 +117,7 @@ const EntryView = React.memo(function EntryView({
               <Text
                 style={
                   styles.h2
-                }>{parseTime(time)}</Text>
+                }>{currentTitle}</Text>
               <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={1} ellipsizeMode="tail">
                 {convertSecondsToMinutesAndSeconds(audio.length)}
               </Text>

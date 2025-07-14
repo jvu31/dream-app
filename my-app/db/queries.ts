@@ -22,12 +22,11 @@ async function genericFetchOne<TTable extends SQLiteTable, TIdColumn extends Col
   return item as InferSelectModel<TTable>;
 }
 
-async function genericFetchAll<TTable extends SQLiteTable>(
+function genericFetchAll<TTable extends SQLiteTable>(
   table: TTable
-): Promise<InferSelectModel<TTable>[]> {
-  const items = await db.select().from(table).all();
-  console.log("Fetched all of something")
-  return items as InferSelectModel<TTable>[];
+) {
+  //console.log(`Building query to fetch all from ${table._.name}`);
+  return db.select().from(table);
 }
 
 async function genericInsert<TTable extends SQLiteTable>(
@@ -99,8 +98,8 @@ export const fetchAllEntries = async ({
   return [];
 };
 
-export const fetchAllEntriesTest = async () => {
-  return genericFetchAll(schema.entry);
+export const fetchAllEntriesTest = () => {
+  return genericFetchAll(schema.entry); // Returns a query object for useLiveQuery
 };
 
 // Fetch a journal entry
@@ -127,6 +126,7 @@ export const editEntry = async (entry_id: number, entry_data: any, entry_type: a
     entry_type,
     entry_data
   );
+  console.log("Entry updated!")
 };
 
 // --- Recording Queries ---
@@ -150,7 +150,7 @@ export const removeRecording = async (id: number) => {
 
 // Fetch all alarms
 export const fetchAllAlarms = async () => {
-  return genericFetchAll(schema.alarm);
+  return genericFetchAll(schema.alarm).all();
 };
 
 // Fetch an alarm
@@ -181,7 +181,7 @@ export const removeAlarm = async (id: number) => {
 
 // Fetch all ringtones
 export const fetchAllRingtones = async () => {
-  return genericFetchAll(schema.ringtone);
+  return genericFetchAll(schema.ringtone).all();
 };
 
 // Fetch a ringtone
@@ -212,7 +212,7 @@ export const removeRingtone = async (id: number) => {
 
 // Fetch all tags
 export const fetchAllTags = async () => {
-  return genericFetchAll(schema.tag);
+  return genericFetchAll(schema.tag).all();
 };
 
 // Fetch a tag
@@ -290,7 +290,7 @@ export const removeTagFromEntry = async (entryId: number, tagId: number) => {};
 
 // Fetch all summaries
 export const fetchAllSummaries = async () => {
-  return genericFetchAll(schema.summary);
+  return genericFetchAll(schema.summary).all();
 };
 
 // Fetch a summary
