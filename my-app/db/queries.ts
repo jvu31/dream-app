@@ -97,7 +97,6 @@ export const fetchAllEntries = ({
 
   if (query) {
     conditions.push(like(schema.entry.content, `%${query}%`));
-    console.log("Returning query: ", conditions)
   }
 
   if (pin === 1) {

@@ -91,8 +91,6 @@ export default function Entry() {
 
     setMoods(grouped['mood'] || []);
     setPeople(grouped['people'] || []);
-
-    //console.log('Tags grouped!');
   }, [tags]);
 
   // Handle user changes to content and entry values
@@ -104,7 +102,7 @@ export default function Entry() {
       setCurrentContent(value);
       await editEntry(Number(id), value, 'content');
     }
-  }
+  };
 
   const test = () => {};
 
@@ -154,7 +152,7 @@ export default function Entry() {
             {/* Content of the journal entry */}
             <View style={{ height: '65%' }}>
               <TextInput
-                style={[styles.h2, { opacity: 0.65 }]}
+                style={[styles.h2, { opacity: 0.65, textAlignVertical: 'top' }]}
                 value={currentContent}
                 multiline={true}
                 onChange={(e) => handleChange('content', e.nativeEvent.text)}
@@ -166,15 +164,19 @@ export default function Entry() {
                 <Text style={[styles.h2, { opacity: 0.5 }]}>Moods</Text>
                 <FlatList
                   data={moods}
-                  renderItem={({ item }) => (
-                    <Tag
-                      tag={item.name}
-                      color1={item.color}
-                      type="mood"
-                      active={true}
-                      onPress={test}
-                    />
-                  )}
+                  renderItem={({ item }) => {
+                    
+                      return (
+                        <Tag
+                          tag={item.name}
+                          color1={item.color}
+                          type="mood"
+                          active={true}
+                          onPress={test}
+                        />
+                      );
+                    }
+                  }
                   keyExtractor={(item) => item.tag_id.toString()}
                   horizontal={true}
                   showsHorizontalScrollIndicator={false}

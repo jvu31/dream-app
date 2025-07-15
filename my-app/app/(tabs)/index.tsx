@@ -26,44 +26,45 @@ export default function Home() {
   }, [searchValue, tagFilters]);
   const { data: entriesData } = useLiveQuery(entriesQuery);
   const entries = entriesData || [];
-  const [groupedEntries, setGroupedEntries] = useState([]);
   const [selectedDate, setSelectedDate] = useState('');
   const [dayEntries, setDayEntries] = useState([]);
   const [view, setView] = useState('list');
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['80%'], []);
-  const [debouncedSearchValue, setDebouncedSearchValue] = useState(searchValue);
 
   // Groups the entries based on month
-  useEffect(() => {
-    if (!entries || entries.length === 0) {
-      setGroupedEntries([]);
-      return;
-    }
+  const groupedEntries = useMemo(() => {
+    if (!entries || entries.length === 0) return [];
 
-    // Group by month
-    const grouped = entries.reduce((acc, entry) => {
-      const date = new Date(entry.time);
-      const monthYear = date.toLocaleString('default', {
-        month: 'long',
-        year: 'numeric',
-      });
+    // Sort entries in descending order (most recent first)
+    const sortedEntries = [...entries].sort((a, b) => {
+      const dateA = new Date(a.time).getTime();
+      const dateB = new Date(b.time).getTime();
+      return dateB - dateA;
+    });
 
-      if (!acc[monthYear]) {
-        acc[monthYear] = [];
-      }
-      acc[monthYear].push(entry);
-      return acc;
-    }, {});
+    // Group by month/year
+    const grouped = sortedEntries.reduce(
+      (acc, entry) => {
+        const date = new Date(entry.time);
+        const monthYear = date.toLocaleString('default', {
+          month: 'long',
+          year: 'numeric',
+        });
 
-    // Convert to SectionList format
-    const sections = Object.keys(grouped).map((month) => ({
+        if (!acc[monthYear]) acc[monthYear] = [];
+        acc[monthYear].push(entry);
+
+        return acc;
+      },
+      {} as Record<string, typeof entries>
+    );
+
+    // Format for SectionList
+    return Object.keys(grouped).map((month) => ({
       title: month,
       data: grouped[month],
     }));
-
-    setGroupedEntries(sections);
-    console.log('Grouped entries by month!');
   }, [entries]);
 
   // Set search value with debounce call to database

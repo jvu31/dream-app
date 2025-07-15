@@ -3,7 +3,7 @@ import { styles, colors } from 'styles';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Tag from '../components/tag';
 import { fetchEntryTags, fetchRecording } from 'db/queries';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'expo-router';
 import { convertSecondsToMinutesAndSeconds, groupTags, parseDay, parseTime } from './utils';
 

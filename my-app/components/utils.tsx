@@ -35,5 +35,8 @@ export function parseDay(time) {
 
 export function parseTime(time) {
   const date = new Date(time);
-  return `${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')} ${date.getHours() >= 12 ? 'PM' : 'AM'}`
+  const hours = date.getHours() % 12 || 12;
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+  const ampm = date.getHours() >= 12 ? 'PM' : 'AM'
+  return `${hours}:${minutes} ${ampm}`
 }

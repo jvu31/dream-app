@@ -5,6 +5,7 @@ import Header from '../../components/header';
 import AlarmView from 'components/alarmview';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import DatePicker from 'react-native-date-picker';
 import { colors, styles } from '../../styles';
 import { BlurView } from 'expo-blur';
 
@@ -80,7 +81,7 @@ export default function AlarmScreen() {
           backgroundColor: 'rgba(255, 255, 255, 1)',
         }}>
         <BottomSheetView>
-          <DateTimePicker mode="time" value={time} display="spinner" />
+          <DatePicker date={time} onDateChange={setTime} mode="time" />
           <Text style={styles.h1}>Awesome</Text>
         </BottomSheetView>
       </BottomSheet>
