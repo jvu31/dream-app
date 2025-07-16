@@ -86,11 +86,11 @@ export async function genericUpdate<
 // Fetch all journal entries, can filter from a search (if query is in the content) or tags (if entry contains a tag of mood or person)
 export const fetchAllEntries = ({
   query = '',
-  tag = [],
+  tag_ids = [],
   pin = 0,
 }: {
   query?: string;
-  tag?: string[];
+  tag_ids?: number[];
   pin?: number;
 }) => {
   const conditions = [];
@@ -106,36 +106,35 @@ export const fetchAllEntries = ({
   let baseQuery = db.select().from(schema.entry);
 
   let joinedQuery: any = null;
-  if (Array.isArray(tag) && tag.length > 0) {
+  if (Array.isArray(tag_ids) && tag_ids.length > 0) {
+    // If tag_ids is an array and has elements, construct a joined query
     joinedQuery = db
       .select()
       .from(schema.entry)
-      .innerJoin(
-        schema.entry_tag,
-        eq(schema.entry.entry_id, schema.entry_tag.entry_id)
-      )
-      .innerJoin(
-        schema.tag,
-        eq(schema.entry_tag.tag_id, schema.tag.tag_id)
-      );
+      .innerJoin(schema.entry_tag, eq(schema.entry.entry_id, schema.entry_tag.entry_id))
+      .innerJoin(schema.tag, eq(schema.entry_tag.tag_id, schema.tag.tag_id));
 
-    conditions.push(inArray(schema.tag.name, tag));
+    // Add a condition to filter by the provided tag IDs
+    conditions.push(inArray(schema.tag.tag_id, tag_ids));
   }
+
 
   if (conditions.length > 0) {
     if (joinedQuery) {
+      console.log('Returning joined query: ', conditions)
       return joinedQuery.where(and(...conditions));
     } else {
       return baseQuery.where(and(...conditions));
     }
   }
 
-  console.log("Returning base query: ", conditions)
+  console.log('Returning base query: ', conditions);
   return baseQuery;
 };
 
 export const fetchAllEntriesTest = () => {
   return genericFetchAll(schema.entry);
+
 };
 
 // Fetch a journal entry
@@ -292,7 +291,7 @@ export const fetchEntryTags = async (entryId: number) => {
 
 // Fetch a tag's entries
 // Fetch all entries for a given tag
-export const fetchTagEntries = async (tagId: number) => {
+export const fetchTagEntries = async (tag_id: number) => {
   const data = await db
     .select({
       entryTagId: schema.entry_tag.entry_tag_id,
@@ -303,7 +302,7 @@ export const fetchTagEntries = async (tagId: number) => {
       pinned: schema.entry.pinned,
     })
     .from(schema.entry_tag)
-    .where(eq(schema.entry_tag.tag_id, tagId))
+    .where(eq(schema.entry_tag.tag_id, tag_id))
     .innerJoin(schema.entry, eq(schema.entry_tag.entry_id, schema.entry.entry_id))
     .all();
 
@@ -311,10 +310,16 @@ export const fetchTagEntries = async (tagId: number) => {
 };
 
 // Add a tag to an entry
-export const addTagToEntry = async (entryId: number, tagId: number) => {};
+export const addTagToEntry = async (entry_id: number, tag_id: number) => {
+  await genericInsert(schema.entry_tag, { entry_id, tag_id }, 'entry_tag');
+  console.log('Added tag to entry!');
+};
 
 // Remove a tag from an entry
-export const removeTagFromEntry = async (entryId: number, tagId: number) => {};
+export const removeTagFromEntry = async (entry_id: number, tag_id: number) => {
+  await db.delete(schema.entry_tag).where(and(eq(schema.entry_tag.entry_id, entry_id), eq(schema.entry_tag.tag_id, tag_id))).run();
+  console.log('Removed tag from entry!');
+};
 
 // --- Summary Queries ---
 

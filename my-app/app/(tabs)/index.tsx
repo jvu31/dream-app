@@ -20,7 +20,7 @@ export default function Home() {
   const entriesQuery = useMemo(() => {
     return fetchAllEntries({
       query: searchValue,
-      tag: tagFilters,
+      tag_ids: tagFilters,
       pin: 0,
     });
   }, [searchValue, tagFilters]);
@@ -113,6 +113,17 @@ export default function Home() {
     const entriesForDay = entries.filter((entry) => entry.time.startsWith(day.dateString));
     setDayEntries(entriesForDay);
   };
+
+  // Update the tag filters
+  const updateTagFilters = (tag_id: number) => {
+    const newTagFilters = tagFilters.includes(tag_id)
+      ? tagFilters.filter((id) => id !== tag_id)
+      : [...tagFilters, tag_id];
+    setTagFilters(newTagFilters);
+  };
+
+
+  const test = () => {};
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -224,7 +235,11 @@ export default function Home() {
             backgroundColor: 'rgba(255, 255, 255, 1)',
           }}>
           <BottomSheetView>
-            <FilterSheet />
+            <FilterSheet
+              tagFilters={tagFilters}
+              setTagFilters={updateTagFilters}
+              setDateRange={test}
+            />
           </BottomSheetView>
         </BottomSheet>
       </GestureHandlerRootView>

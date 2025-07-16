@@ -4,8 +4,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import styles, { colors } from 'styles';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useState, useEffect, useRef } from 'react';
-import { editEntry, fetchEntry, fetchEntryTags, fetchRecording } from 'db/queries';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import {
+  addTagToEntry,
+  editEntry,
+  fetchEntry,
+  fetchEntryTags,
+  fetchRecording,
+  removeTag,
+  removeTagFromEntry,
+} from 'db/queries';
 import { EntryModel, RecordingModel, TagModel } from 'db/interfaces';
 import {
   convertSecondsToMinutesAndSeconds,
@@ -14,6 +22,8 @@ import {
   parseTime,
 } from 'components/utils';
 import Tag from 'components/tag';
+import FilterSheet from 'components/filtersheet';
+import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 
 export default function Entry() {
   const router = useRouter();
@@ -25,6 +35,9 @@ export default function Entry() {
   const [people, setPeople] = useState([]);
   const [currentTitle, setCurrentTitle] = useState<string>();
   const [currentContent, setCurrentContent] = useState<string>();
+
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['80%'], []);
 
   // Fetch the journal entry data
   useEffect(() => {
@@ -50,7 +63,6 @@ export default function Entry() {
         try {
           const data = await fetchRecording(entry.recording_id);
           setRecording(data);
-          console.log('Recording fetched!');
         } catch (error) {
           console.error('Error fetching recording:', error);
         }
@@ -64,7 +76,7 @@ export default function Entry() {
       try {
         const data = await fetchEntryTags(Number(id));
         setTags(data);
-        //console.log('Tags fetched!');
+        console.log('Tags fetched!');
       } catch (error) {
         console.error('Error fetching tags:', error);
       }
@@ -104,6 +116,39 @@ export default function Entry() {
     }
   };
 
+  // Opens the filters
+  const openFilters = () => {
+    bottomSheetRef.current?.expand();
+  };
+
+  // Renders a backdrop that closes the sheet on press
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop
+        {...props}
+        pressBehavior="close"
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+      />
+    ),
+    []
+  );
+
+  // Handle change to entry's tags
+  const changeTags = async (tag_id: number) => {
+    // Tag already included, meaning user wants to remove
+    if (tags.some((tag) => tag.tag_id === tag_id)) {
+      await removeTagFromEntry(Number(id), tag_id);
+
+      // Tag not already in entry's tags, meaning user wants to add
+    } else {
+      await addTagToEntry(Number(id), tag_id);
+    }
+
+    const data = await fetchEntryTags(Number(id));
+    setTags(data);
+  };
+
   const test = () => {};
 
   return (
@@ -125,7 +170,7 @@ export default function Entry() {
             <Text style={[styles.h2, { color: colors.accent }]}>Back</Text>
           </TouchableOpacity>
           <FontAwesome
-            name="search"
+            name="align-justify"
             size={24}
             color={colors.accent}
             style={{ opacity: 0.5, marginRight: 8 }}
@@ -160,23 +205,32 @@ export default function Entry() {
             </View>
             {/* Tag information */}
             <View style={{ gap: 8 }}>
+              {/* Mood tags */}
               <View style={{ gap: 8 }}>
-                <Text style={[styles.h2, { opacity: 0.5 }]}>Moods</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={[styles.h2, { opacity: 0.5 }]}>Moods</Text>
+                  <TouchableOpacity onPress={openFilters}>
+                    <FontAwesome
+                      name="edit"
+                      size={18}
+                      color={colors.text}
+                      style={{ opacity: 0.5 }}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <FlatList
                   data={moods}
                   renderItem={({ item }) => {
-                    
-                      return (
-                        <Tag
-                          tag={item.name}
-                          color1={item.color}
-                          type="mood"
-                          active={true}
-                          onPress={test}
-                        />
-                      );
-                    }
-                  }
+                    return (
+                      <Tag
+                        tag={item.name}
+                        color1={item.color}
+                        type="mood"
+                        active={true}
+                        onPress={test}
+                      />
+                    );
+                  }}
                   keyExtractor={(item) => item.tag_id.toString()}
                   horizontal={true}
                   showsHorizontalScrollIndicator={false}
@@ -185,8 +239,19 @@ export default function Entry() {
                   }}
                 />
               </View>
+              {/* People tags */}
               <View style={{ gap: 8 }}>
-                <Text style={[styles.h2, { opacity: 0.5 }]}>People</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={[styles.h2, { opacity: 0.5 }]}>People</Text>
+                  <TouchableOpacity onPress={openFilters}>
+                    <FontAwesome
+                      name="edit"
+                      size={18}
+                      color={colors.text}
+                      style={{ opacity: 0.5 }}
+                    />
+                  </TouchableOpacity>
+                </View>
                 <FlatList
                   data={people}
                   renderItem={({ item }) => (
@@ -215,6 +280,26 @@ export default function Entry() {
             </View>
           </View>
         </View>
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={-1}
+          snapPoints={snapPoints}
+          enablePanDownToClose
+          backdropComponent={renderBackdrop}
+          backgroundStyle={{
+            backgroundColor: colors.secondary,
+          }}
+          handleIndicatorStyle={{
+            backgroundColor: 'rgba(255, 255, 255, 1)',
+          }}>
+          <BottomSheetView>
+            <FilterSheet
+              tagFilters={tags.map((t) => t.tag_id)}
+              setTagFilters={changeTags}
+              setDateRange={test}
+            />
+          </BottomSheetView>
+        </BottomSheet>
       </GestureHandlerRootView>
     </SafeAreaView>
   );

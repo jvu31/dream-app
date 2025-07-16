@@ -1,3 +1,6 @@
+import { BottomSheetBackdrop } from '@gorhom/bottom-sheet';
+import { useCallback } from 'react';
+
 export function convertSecondsToMinutesAndSeconds(totalSeconds) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -36,7 +39,7 @@ export function parseDay(time) {
 export function parseTime(time) {
   const date = new Date(time);
   const hours = date.getHours() % 12 || 12;
-  const minutes = date.getMinutes().toString().padStart(2, '0')
-  const ampm = date.getHours() >= 12 ? 'PM' : 'AM'
-  return `${hours}:${minutes} ${ampm}`
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  const ampm = date.getHours() >= 12 ? 'PM' : 'AM';
+  return `${hours}:${minutes} ${ampm}`;
 }
