@@ -1,4 +1,4 @@
-import { Text, View, SafeAreaView, SectionList } from 'react-native';
+import { Text, View, SafeAreaView, SectionList, TouchableOpacity } from 'react-native';
 import { colors, styles } from '../../styles';
 import Header from '../../components/header';
 import EntryView from 'components/entryview';
@@ -10,6 +10,7 @@ import { fetchAllEntries } from 'db/queries';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Calendar, DateData } from 'react-native-calendars';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { parseMonth } from 'components/utils';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 

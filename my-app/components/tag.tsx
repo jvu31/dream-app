@@ -1,9 +1,12 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { Text, View, TouchableOpacity, Animated, Easing } from 'react-native';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles, { colors } from 'styles';
+import { darkenHexColor } from './utils';
+import TagEdit from './tagedit';
 
 interface Props {
+  tag_id: number;
   tag: string;
   color1: string;
   active: boolean;
@@ -11,7 +14,9 @@ interface Props {
   onPress: () => void;
 }
 
-const Tag = React.memo(function Tag({ tag, color1, active, type, onPress }: Props) {
+const Tag = React.memo(function Tag({ tag_id, tag, color1, active, type, onPress }: Props) {
+  const [openEdit, setEdit] = useState(false);
+
   const animationValue = useRef(new Animated.Value(active ? 1 : 0)).current;
 
   useEffect(() => {
@@ -22,20 +27,6 @@ const Tag = React.memo(function Tag({ tag, color1, active, type, onPress }: Prop
       useNativeDriver: true, // Opacity is supported by the native driver for performance
     }).start();
   }, [active]);
-
-  // Darkens a hex value by a certain factor
-  function darkenHexColor(hex, factor) {
-    return (
-      '#' +
-      [1, 3, 5]
-        .map((i) => {
-          const channel = parseInt(hex.substr(i, 2), 16);
-          const darker = Math.round(channel * (1 - factor));
-          return darker.toString().padStart(2, '0');
-        })
-        .join('')
-    );
-  }
 
   // Tag for people (differs with no background)
   if (type === 'people') {
@@ -72,7 +63,10 @@ const Tag = React.memo(function Tag({ tag, color1, active, type, onPress }: Prop
   });
 
   return (
-    <TouchableOpacity onPress={onPress} style={{ borderRadius: 10 }}>
+    <TouchableOpacity
+      onPress={onPress}
+      onLongPress={() => setEdit(true)}
+      style={{ borderRadius: 10 }}>
       <View>
         {/* Active view */}
         <Animated.View style={{ opacity: activeOpacity }}>
@@ -89,11 +83,21 @@ const Tag = React.memo(function Tag({ tag, color1, active, type, onPress }: Prop
         <Animated.View
           style={[
             wrapperStyle,
-            { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: inactiveOpacity },
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              opacity: inactiveOpacity,
+            },
           ]}>
           <Text style={[styles.h4, { opacity: 0.5, color: colors.text }]}>{tag}</Text>
         </Animated.View>
       </View>
+      {openEdit && (
+        <TagEdit tag_id={tag_id} name={tag} color={color1} onClose={() => setEdit(false)} />
+      )}
     </TouchableOpacity>
   );
 });

@@ -43,3 +43,17 @@ export function parseTime(time) {
   const ampm = date.getHours() >= 12 ? 'PM' : 'AM';
   return `${hours}:${minutes} ${ampm}`;
 }
+
+// Darkens a hex value by a certain factor
+export function darkenHexColor(hex, factor) {
+  return (
+    '#' +
+    [1, 3, 5]
+      .map((i) => {
+        const channel = parseInt(hex.substr(i, 2), 16);
+        const darker = Math.round(channel * (1 - factor));
+        return darker.toString().padStart(2, '0');
+      })
+      .join('')
+  );
+}

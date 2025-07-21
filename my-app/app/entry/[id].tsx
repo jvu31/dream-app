@@ -223,6 +223,7 @@ export default function Entry() {
                   renderItem={({ item }) => {
                     return (
                       <Tag
+                        tag_id={item.tag_id}
                         tag={item.name}
                         color1={item.color}
                         type="mood"
@@ -256,6 +257,7 @@ export default function Entry() {
                   data={people}
                   renderItem={({ item }) => (
                     <Tag
+                      tag_id={item.tag_id}
                       tag={item.name}
                       color1={item.color}
                       type="people"

@@ -17,7 +17,7 @@ export default function TabLayout() {
   useEffect(() => {
     const setupDB = async () => {
       //await clearDatabase()
-      await initDatabase();
+      //await initDatabase();
       //await createDummyData();
     };
     setupDB();

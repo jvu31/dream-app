@@ -63,6 +63,8 @@ const FilterSheet = React.memo(function FilterSheet({
           {moods.map((mood) => (
             <Tag
               key={mood.tag_id}
+                            tag_id={mood.tag_id}
+
               tag={mood.name}
               color1={mood.color}
               onPress={() => setTagFilters(mood.tag_id)}
@@ -79,6 +81,7 @@ const FilterSheet = React.memo(function FilterSheet({
           {people.map((person) => (
             <Tag
               key={person.tag_id}
+              tag_id={person.tag_id}
               tag={person.name}
               color1={person.color}
               onPress={() => setTagFilters(person.tag_id)}

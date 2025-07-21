@@ -29,7 +29,7 @@ const EntryView = React.memo(function EntryView({
   const [moods, setMoods] = useState([]);
   const [people, setPeople] = useState([]);
   const [audio, setAudio] = useState([]);
-  const [currentTitle, setCurrentTitle] = useState<string>()
+  const [currentTitle, setCurrentTitle] = useState<string>();
 
   // Fetches the tags tied to an entry
   useEffect(() => {
@@ -56,7 +56,7 @@ const EntryView = React.memo(function EntryView({
   useEffect(() => {
     if (tags.length === 0) return;
 
-    const grouped = groupTags(tags)
+    const grouped = groupTags(tags);
 
     setMoods(grouped['mood'] || []);
     setPeople(grouped['people'] || []);
@@ -114,10 +114,7 @@ const EntryView = React.memo(function EntryView({
                 alignItems: 'center',
                 flexWrap: 'wrap',
               }}>
-              <Text
-                style={
-                  styles.h2
-                }>{currentTitle}</Text>
+              <Text style={styles.h2}>{currentTitle}</Text>
               <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={1} ellipsizeMode="tail">
                 {convertSecondsToMinutesAndSeconds(audio.length)}
               </Text>
@@ -132,6 +129,7 @@ const EntryView = React.memo(function EntryView({
                 data={moods}
                 renderItem={({ item }) => (
                   <Tag
+                    tag_id={item.tag_id}
                     tag={item.name}
                     color1={item.color}
                     type="mood"
@@ -150,6 +148,7 @@ const EntryView = React.memo(function EntryView({
                 data={people}
                 renderItem={({ item }) => (
                   <Tag
+                    tag_id={item.tag_id}
                     tag={item.name}
                     color1={item.color}
                     type="people"
