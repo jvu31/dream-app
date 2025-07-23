@@ -1,4 +1,4 @@
-import { eq, InferInsertModel, InferSelectModel, Column, like, and, inArray } from 'drizzle-orm';
+import { eq, InferInsertModel, InferSelectModel, Column, like, and, inArray, AnyColumn, desc } from 'drizzle-orm';
 import * as schema from './schema';
 import { SQLiteTable } from 'drizzle-orm/sqlite-core';
 import { db } from './client';
@@ -30,15 +30,26 @@ function genericFetchAll<TTable extends SQLiteTable>(table: TTable) {
 async function genericInsert<TTable extends SQLiteTable>(
   table: TTable,
   data: InferInsertModel<TTable>,
-  itemName: string
-): Promise<void> {
+  itemName: string,
+  getOrderByColumn: (t: TTable) => AnyColumn // or similar
+): Promise<InferSelectModel<TTable>> {
   try {
     await db.insert(table).values(data).run();
+
+    const [latest] = await db
+      .select()
+      .from(table)
+      .orderBy(desc(getOrderByColumn(table)))
+      .limit(1)
+      .all();
+
+    return latest;
   } catch (error) {
     console.error(`Error adding ${itemName}:`, error);
     throw new Error(`Unable to add ${itemName}`);
   }
 }
+
 
 async function genericDelete<TTable extends SQLiteTable, TIdColumn extends Column<any, any, any>>(
   table: TTable,
@@ -144,7 +155,8 @@ export const fetchEntry = async (id: number) => {
 
 // Add a journal entry
 export const addEntry = async (entryData: InferInsertModel<typeof schema.entry>) => {
-  await genericInsert(schema.entry, entryData, 'entry');
+  const entry = await genericInsert(schema.entry, entryData, 'entry', t => t.entry_id);
+  return [entry]
 };
 
 // Remove a journal entry
@@ -155,7 +167,6 @@ export const removeEntry = async (id: number) => {
 // Edit a journal entry
 export const editEntry = async (entry_id: number, entry_data: any, entry_type: any) => {
   genericUpdate(schema.entry, schema.entry.entry_id, entry_id, entry_type, entry_data);
-  console.log('Entry updated!');
 };
 
 // --- Recording Queries ---
@@ -165,9 +176,10 @@ export const fetchRecording = async (id: number) => {
   return genericFetchOne(schema.recording, schema.recording.recording_id, id, 'Recording');
 };
 
+
 // Adding a recording to an entry (transcription added to entry content later)
 export const addRecording = async (recordingData: InferInsertModel<typeof schema.recording>) => {
-  await genericInsert(schema.recording, recordingData, 'recording');
+  //await genericInsert(schema.recording, recordingData, 'recording');
 };
 
 // Removing a recording
@@ -189,7 +201,7 @@ export const fetchAlarm = async (id: number) => {
 
 // Add an alarm
 export const addAlarm = async (alarmData: InferInsertModel<typeof schema.alarm>) => {
-  await genericInsert(schema.alarm, alarmData, 'alarm');
+  await genericInsert(schema.alarm, alarmData, 'alarm', t=> t.alarm_id);
 };
 
 /*
@@ -220,7 +232,7 @@ export const fetchRingtone = async (id: number) => {
 
 // Add a ringtone
 export const addRingtone = async (ringtoneData: InferInsertModel<typeof schema.ringtone>) => {
-  await genericInsert(schema.ringtone, ringtoneData, 'ringtone');
+  await genericInsert(schema.ringtone, ringtoneData, 'ringtone', t => t.ringtone_id);
 };
 
 /*
@@ -251,18 +263,10 @@ export const fetchTag = async (id: number) => {
 
 // Add a tag
 export const addTag = async (tagData: InferInsertModel<typeof schema.tag>) => {
-  await genericInsert(schema.tag, tagData, 'tag');
+  await genericInsert(schema.tag, tagData, 'tag', t => t.tag_id);
 };
 
-/*
 // Edit a tag
-export const editTag = async (
-  id: number,
-  tagData: Partial<InferInsertModel<typeof schema.tag>>
-) => {
-  await genericUpdate(schema.tag, schema.tag.tag_id, id, tagData, 'tag');
-};*/
-
 export const editTag = async (tag_id, tag_data, tag_type) => {
   genericUpdate(schema.tag, schema.tag.tag_id, tag_id, tag_type, tag_data);
   console.log('Tag updated!');
@@ -294,6 +298,7 @@ export const fetchEntryTags = async (entryId: number) => {
   return data; // Example: [{ entryTagId: 1, entryId: 1, tagId: 2, name: 'Happy', ... }]
 };
 
+
 // Fetch a tag's entries
 // Fetch all entries for a given tag
 export const fetchTagEntries = async (tag_id: number) => {
@@ -316,9 +321,17 @@ export const fetchTagEntries = async (tag_id: number) => {
 
 // Add a tag to an entry
 export const addTagToEntry = async (entry_id: number, tag_id: number) => {
-  await genericInsert(schema.entry_tag, { entry_id, tag_id }, 'entry_tag');
+  await genericInsert(schema.entry_tag, { entry_id, tag_id }, 'entry_tag', t=> t.entry_tag_id);
   console.log('Added tag to entry!');
 };
+
+// Add multiple tags to an entry
+export const addMultipleTagsToEntry = async (entry_id: number, tag_ids: number[]) => {
+  for (const tag_id of tag_ids) {
+    await addTagToEntry(entry_id, tag_id);
+  }
+  console.log('Added multiple tags to entry!');
+}
 
 // Remove a tag from an entry
 export const removeTagFromEntry = async (entry_id: number, tag_id: number) => {
@@ -340,7 +353,7 @@ export const fetchSummary = async (id: number) => {
 
 // Add a summary
 export const addSummary = async (summaryData: InferInsertModel<typeof schema.summary>) => {
-  await genericInsert(schema.summary, summaryData, 'summary');
+  await genericInsert(schema.summary, summaryData, 'summary', t=> t.summary_id);
 };
 
 /*

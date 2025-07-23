@@ -6,15 +6,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
+  addEntry,
+  addMultipleTagsToEntry,
   addTagToEntry,
   editEntry,
   fetchEntry,
   fetchEntryTags,
   fetchRecording,
-  removeTag,
   removeTagFromEntry,
 } from 'db/queries';
-import { EntryModel, RecordingModel, TagModel } from 'db/interfaces';
+import { EntryModel, RecordingModel } from 'db/interfaces';
 import {
   convertSecondsToMinutesAndSeconds,
   groupTags,
@@ -41,16 +42,30 @@ export default function Entry() {
 
   // Fetch the journal entry data
   useEffect(() => {
-    const fetchEntryData = async () => {
-      try {
-        const data = await fetchEntry(Number(id));
-        setEntry(data);
-        console.log('Entry fetched!');
-      } catch (error) {
-        console.error('Error fetching entry:', error);
-      }
-    };
-    fetchEntryData();
+    // New Entry
+    if (Number(id) === -1) {
+      const data = {
+        entry_id: -1,
+        pinned: 0,
+        time: new Date().toISOString(),
+        content: '',
+        title: '',
+        recording_id: null,
+      };
+      setEntry(data);
+      // Preexisting entry
+    } else {
+      const fetchEntryData = async () => {
+        try {
+          const data = await fetchEntry(Number(id));
+          setEntry(data);
+          console.log('Entry fetched!');
+        } catch (error) {
+          console.error('Error fetching entry:', error);
+        }
+      };
+      fetchEntryData();
+    }
   }, [id]);
 
   // Sets corresponding entry data
@@ -149,6 +164,27 @@ export default function Entry() {
     setTags(data);
   };
 
+  // Handle returning to previous page
+  const handleBack = async () => {
+    if (Number(id) === -1) {
+      console.log('Creating a new entry!');
+      const newEntryArray = await addEntry({
+        pinned: entry.pinned,
+        time: entry.time,
+        content: currentContent,
+        title: currentTitle,
+      });
+      const newEntry = Array.isArray(newEntryArray) ? newEntryArray[0] : newEntryArray;
+
+      await addMultipleTagsToEntry(
+        newEntry.entry_id,
+        tags.map((t) => t.tag_id)
+      );
+    }
+
+    router.back();
+  };
+
   const test = () => {};
 
   return (
@@ -166,7 +202,7 @@ export default function Entry() {
             backgroundColor: colors.secondary,
             width: '100%',
           }}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={handleBack}>
             <Text style={[styles.h2, { color: colors.accent }]}>Back</Text>
           </TouchableOpacity>
           <FontAwesome

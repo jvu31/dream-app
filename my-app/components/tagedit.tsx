@@ -53,6 +53,7 @@ const TagEdit = React.memo(function TagEdit({ tag_id, name, color, onClose }: Pr
               <Text style={styles.h4}>{currentName}</Text>
             </LinearGradient>
           </View>
+          {/* Color picker to change mood tags */}
           <ColorPicker
             value={currentColor}
             onChangeJS={onColorChange}

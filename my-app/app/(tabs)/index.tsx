@@ -10,9 +10,10 @@ import { fetchAllEntries } from 'db/queries';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Calendar, DateData } from 'react-native-calendars';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { parseMonth } from 'components/utils';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import { FloatingAction, IActionProps } from 'react-native-floating-action';
+import { useRouter } from 'expo-router';
 
 export default function Home() {
   // Reactively fetch entries from the database. Data will update automatically on changes.
@@ -27,11 +28,14 @@ export default function Home() {
   }, [searchValue, tagFilters]);
   const { data: entriesData } = useLiveQuery(entriesQuery);
   const entries = entriesData || [];
+
   const [selectedDate, setSelectedDate] = useState('');
   const [dayEntries, setDayEntries] = useState([]);
   const [view, setView] = useState('list');
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['80%'], []);
+
+  const router = useRouter()
 
   // Groups the entries based on month
   const groupedEntries = useMemo(() => {
@@ -89,6 +93,7 @@ export default function Home() {
     bottomSheetRef.current?.expand();
   };
 
+  // Handles assigning date marks to the calendar days
   const markedDates = useMemo(() => {
     const marks = entries.reduce((acc, entry) => {
       const dateString = entry.time.split('T')[0];
@@ -109,6 +114,7 @@ export default function Home() {
     return marks;
   }, [entries, selectedDate]);
 
+  // Handles switching between days
   const onDayPress = (day: DateData) => {
     setSelectedDate(day.dateString);
     const entriesForDay = entries.filter((entry) => entry.time.startsWith(day.dateString));
@@ -123,6 +129,27 @@ export default function Home() {
     setTagFilters(newTagFilters);
   };
 
+  // Options for floating action button
+  const actions: IActionProps[] = [
+    { name: 'bt_add_entry', text: 'Add Entry' },
+    { name: 'bt_add_alarm', text: 'Add Alarm' },
+  ];
+
+  // Actions for each floating action option
+  const handleFloatingActionPress = (name?: string) => {
+    switch (name) { 
+      // Add a new entry
+      case 'bt_add_entry':
+        console.log('Add entry');
+        // New entry id is initially -1, changes to actual id when user makes a change
+        router.push(`entry/${-1}`) 
+        break;
+      // Add a new alarm
+      case 'bt_add_alarm':
+        console.log('Add alamr');
+        break;
+    }
+  };
 
   const test = () => {};
 
@@ -243,6 +270,13 @@ export default function Home() {
             />
           </BottomSheetView>
         </BottomSheet>
+        <FloatingAction
+          actions={actions}
+          onPressItem={handleFloatingActionPress}
+          distanceToEdge={{ vertical: 120, horizontal: 30 }}
+          shadow={{ shadowOpacity: 0, shadowOffset: { width: 0, height: 0 } }}
+          color={colors.accent}
+        />
       </GestureHandlerRootView>
     </SafeAreaView>
   );

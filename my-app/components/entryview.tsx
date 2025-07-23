@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import { styles, colors } from 'styles';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Tag from '../components/tag';
+import Tag from './tag';
 import { fetchEntryTags, fetchRecording } from 'db/queries';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'expo-router';
@@ -66,16 +66,18 @@ const EntryView = React.memo(function EntryView({
 
   // Fetches the entry's audio recording
   useEffect(() => {
-    const fetchAudio = async () => {
-      try {
-        const data: any = await fetchRecording(recording_id);
-        setAudio(data);
-        //console.log('Audio recording fetched!');
-      } catch (error) {
-        console.error('Error fetching audio recording:', error);
-      }
-    };
-    fetchAudio();
+    if (recording_id) {
+      const fetchAudio = async () => {
+        try {
+          const data: any = await fetchRecording(recording_id);
+          setAudio(data);
+          //console.log('Audio recording fetched!');
+        } catch (error) {
+          console.error('Error fetching audio recording:', error);
+        }
+      };
+      fetchAudio();
+    }
   }, []);
 
   return (
