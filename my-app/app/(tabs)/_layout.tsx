@@ -29,7 +29,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
-          backgroundColor: '#2b2435',
+          backgroundColor: colors.secondary,
           borderTopWidth: 0,
           borderRadius: 50,
           marginHorizontal: 20,
@@ -37,9 +37,7 @@ export default function TabLayout() {
           height: 60,
           position: 'absolute',
           overflow: 'hidden',
-          elevation: 0,
-          shadowColor: 'transparent',
-          shadowOpacity: 0,
+          elevation: 0
         },
         headerShown: false,
       }}>

@@ -263,6 +263,11 @@ export const editTag = async (
   await genericUpdate(schema.tag, schema.tag.tag_id, id, tagData, 'tag');
 };*/
 
+export const editTag = async (tag_id, tag_data, tag_type) => {
+  genericUpdate(schema.tag, schema.tag.tag_id, tag_id, tag_type, tag_data);
+  console.log('Tag updated!');
+}
+
 // Remove a tag
 export const removeTag = async (id: number) => {
   await genericDelete(schema.tag, schema.tag.tag_id, id, 'tag');
