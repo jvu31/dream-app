@@ -330,7 +330,6 @@ export const addMultipleTagsToEntry = async (entry_id: number, tag_ids: number[]
   for (const tag_id of tag_ids) {
     await addTagToEntry(entry_id, tag_id);
   }
-  console.log('Added multiple tags to entry!');
 }
 
 // Remove a tag from an entry

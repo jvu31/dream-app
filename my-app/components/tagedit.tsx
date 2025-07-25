@@ -31,7 +31,7 @@ const TagEdit = React.memo(function TagEdit({ tag_id, name, color, onClose }: Pr
     <Modal
       animationType="fade"
       transparent={true}
-      visible={true} // The parent component controls visibility by mounting/unmounting
+      visible={true}
       onRequestClose={onClose}>
       <TouchableOpacity style={localStyles.overlay} activeOpacity={1}>
         <View style={localStyles.modalView}>

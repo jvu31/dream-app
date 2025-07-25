@@ -13,6 +13,8 @@ import {
   fetchEntry,
   fetchEntryTags,
   fetchRecording,
+  removeEntry,
+  removeRecording,
   removeTagFromEntry,
 } from 'db/queries';
 import { EntryModel, RecordingModel } from 'db/interfaces';
@@ -25,6 +27,7 @@ import {
 import Tag from 'components/tag';
 import FilterSheet from 'components/filtersheet';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
+import Dropdown from 'components/dropdown';
 
 export default function Entry() {
   const router = useRouter();
@@ -36,9 +39,13 @@ export default function Entry() {
   const [people, setPeople] = useState([]);
   const [currentTitle, setCurrentTitle] = useState<string>();
   const [currentContent, setCurrentContent] = useState<string>();
+  const [currentPin, setCurrentPin] = useState<boolean>();
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['80%'], []);
+
+  // Data for handling the option dropdown menu
+  const [openOptions, setOptions] = useState(false);
 
   // Fetch the journal entry data
   useEffect(() => {
@@ -66,7 +73,7 @@ export default function Entry() {
       };
       fetchEntryData();
     }
-  }, [id]);
+  }, [id, currentPin]);
 
   // Sets corresponding entry data
   useEffect(() => {
@@ -79,11 +86,13 @@ export default function Entry() {
           const data = await fetchRecording(entry.recording_id);
           setRecording(data);
         } catch (error) {
-          console.error('Error fetching recording:', error);
+          //console.error('Error fetching recording:', error);
         }
       };
 
       fetchRecordingData();
+    } else {
+      setRecording(null); // Explicitly clear old recording if switching to a no-recording entry
     }
 
     // Fetches the tags tied to an entry
@@ -122,12 +131,19 @@ export default function Entry() {
 
   // Handle user changes to content and entry values
   const handleChange = async (type: string, value: any) => {
-    if (type === 'title') {
-      setCurrentTitle(value);
-      await editEntry(Number(id), value, 'title');
-    } else if (type === 'content') {
-      setCurrentContent(value);
-      await editEntry(Number(id), value, 'content');
+    switch (type) {
+      case 'title':
+        setCurrentTitle(value);
+        await editEntry(Number(id), value, 'title');
+        break;
+      case 'content':
+        setCurrentContent(value);
+        await editEntry(Number(id), value, 'content');
+        break;
+      case 'pin':
+        setCurrentPin(value);
+        await editEntry(Number(id), value, 'pinned');
+        break;
     }
   };
 
@@ -185,6 +201,28 @@ export default function Entry() {
     router.back();
   };
 
+  // Handling the option menu actions
+  const deleteEntry = async () => {
+    await removeEntry(Number(id));
+    router.back();
+  };
+  const pinEntry = () => {
+    handleChange('pin', !currentPin);
+    setOptions(false);
+  };
+  const removeAudio = async () => {
+    await removeRecording(entry.recording_id);
+    setRecording(null);
+    setEntry({ ...entry, recording_id: null });
+    setOptions(false);
+  };
+
+  const options = [
+    { name: 'Delete Entry', icon: 'trash', action: deleteEntry },
+    { name: 'Pin Entry', icon: 'archive', action: pinEntry },
+    { name: 'Remove Audio', icon: 'play', action: removeAudio },
+  ];
+
   const test = () => {};
 
   return (
@@ -205,12 +243,14 @@ export default function Entry() {
           <TouchableOpacity onPress={handleBack}>
             <Text style={[styles.h2, { color: colors.accent }]}>Back</Text>
           </TouchableOpacity>
-          <FontAwesome
-            name="align-justify"
-            size={24}
-            color={colors.accent}
-            style={{ opacity: 0.5, marginRight: 8 }}
-          />
+          <TouchableOpacity onPress={() => setOptions(!openOptions)}>
+            <FontAwesome
+              name="align-justify"
+              size={24}
+              color={colors.accent}
+              style={{ opacity: 0.5, marginRight: 8 }}
+            />
+          </TouchableOpacity>
         </View>
         {/* Content */}
         <View style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, 0.5)' }]}>
@@ -223,92 +263,72 @@ export default function Entry() {
             />
             {/* Audio recording information */}
             <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-              <Text style={[styles.h2, { opacity: 0.5 }]}>
-                {convertSecondsToMinutesAndSeconds(recording?.length ?? 0)}
-              </Text>
-              <TouchableOpacity>
-                <FontAwesome name="play-circle" size={20} color={colors.text} />
-              </TouchableOpacity>
+              {recording ? (
+                <>
+                  <Text style={[styles.h2, { opacity: 0.5 }]}>
+                    {convertSecondsToMinutesAndSeconds(recording.length)}
+                  </Text>
+                  <TouchableOpacity>
+                    <FontAwesome name="play-circle" size={20} color={colors.text} />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity>
+                  <Text style={[styles.h2, { opacity: 0.5, textDecorationLine: 'underline' }]}>
+                    Add a recording...
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
+
             {/* Content of the journal entry */}
             <View style={{ height: '65%' }}>
               <TextInput
                 style={[styles.h2, { opacity: 0.65, textAlignVertical: 'top' }]}
                 value={currentContent}
                 multiline={true}
+                placeholder='What is on your mind?'
+                placeholderTextColor={colors.text}
                 onChange={(e) => handleChange('content', e.nativeEvent.text)}
               />
             </View>
             {/* Tag information */}
             <View style={{ gap: 8 }}>
-              {/* Mood tags */}
-              <View style={{ gap: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={[styles.h2, { opacity: 0.5 }]}>Moods</Text>
-                  <TouchableOpacity onPress={openFilters}>
-                    <FontAwesome
-                      name="edit"
-                      size={18}
-                      color={colors.text}
-                      style={{ opacity: 0.5 }}
-                    />
-                  </TouchableOpacity>
-                </View>
-                <FlatList
-                  data={moods}
-                  renderItem={({ item }) => {
-                    return (
+              {[
+                { title: 'Moods', data: moods, type: 'mood' },
+                { title: 'People', data: people, type: 'people' },
+              ].map((group) => (
+                <View key={group.title} style={{ gap: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={[styles.h2, { opacity: 0.5 }]}>{group.title}</Text>
+                    <TouchableOpacity onPress={openFilters}>
+                      <FontAwesome
+                        name="edit"
+                        size={18}
+                        color={colors.text}
+                        style={{ opacity: 0.5 }}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  <FlatList
+                    data={group.data}
+                    renderItem={({ item }) => (
                       <Tag
                         tag_id={item.tag_id}
                         tag={item.name}
                         color1={item.color}
-                        type="mood"
+                        type={group.type}
                         active={true}
                         onPress={test}
                       />
-                    );
-                  }}
-                  keyExtractor={(item) => item.tag_id.toString()}
-                  horizontal={true}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{
-                    gap: 8,
-                  }}
-                />
-              </View>
-              {/* People tags */}
-              <View style={{ gap: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={[styles.h2, { opacity: 0.5 }]}>People</Text>
-                  <TouchableOpacity onPress={openFilters}>
-                    <FontAwesome
-                      name="edit"
-                      size={18}
-                      color={colors.text}
-                      style={{ opacity: 0.5 }}
-                    />
-                  </TouchableOpacity>
+                    )}
+                    keyExtractor={(item) => item.tag_id.toString()}
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 8 }}
+                  />
                 </View>
-                <FlatList
-                  data={people}
-                  renderItem={({ item }) => (
-                    <Tag
-                      tag_id={item.tag_id}
-                      tag={item.name}
-                      color1={item.color}
-                      type="people"
-                      active={true}
-                      onPress={test}
-                    />
-                  )}
-                  keyExtractor={(item) => item.tag_id.toString()}
-                  horizontal={true}
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{
-                    gap: 8,
-                  }}
-                />
-              </View>
+              ))}
             </View>
             {/* Bottom timestamp */}
             <View>
@@ -338,6 +358,7 @@ export default function Entry() {
             />
           </BottomSheetView>
         </BottomSheet>
+        {openOptions && <Dropdown options={options} />}
       </GestureHandlerRootView>
     </SafeAreaView>
   );

@@ -1,4 +1,4 @@
-import { Text, View, SafeAreaView, SectionList, TouchableOpacity } from 'react-native';
+import { Text, View, SectionList, TouchableOpacity } from 'react-native';
 import { colors, styles } from '../../styles';
 import Header from '../../components/header';
 import EntryView from 'components/entryview';
@@ -14,6 +14,7 @@ import { parseMonth } from 'components/utils';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
 import { FloatingAction, IActionProps } from 'react-native-floating-action';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Home() {
   // Reactively fetch entries from the database. Data will update automatically on changes.
@@ -273,8 +274,7 @@ export default function Home() {
         <FloatingAction
           actions={actions}
           onPressItem={handleFloatingActionPress}
-          distanceToEdge={{ vertical: 120, horizontal: 30 }}
-          shadow={{ shadowOpacity: 0, shadowOffset: { width: 0, height: 0 } }}
+          distanceToEdge={{ vertical: 80, horizontal: 30 }}
           color={colors.accent}
         />
       </GestureHandlerRootView>

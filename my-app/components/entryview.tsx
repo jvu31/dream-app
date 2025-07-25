@@ -66,19 +66,23 @@ const EntryView = React.memo(function EntryView({
 
   // Fetches the entry's audio recording
   useEffect(() => {
-    if (recording_id) {
-      const fetchAudio = async () => {
-        try {
-          const data: any = await fetchRecording(recording_id);
-          setAudio(data);
-          //console.log('Audio recording fetched!');
-        } catch (error) {
-          console.error('Error fetching audio recording:', error);
-        }
-      };
-      fetchAudio();
+    if (!recording_id) {
+      setAudio(null); // clear old audio if recording_id was removed
+      return;
     }
-  }, []);
+
+    const fetchAudio = async () => {
+      try {
+        const data: any = await fetchRecording(recording_id);
+        setAudio(data);
+      } catch (error) {
+        //console.error('Error fetching audio recording:', error);
+        setAudio(null); // fallback for invalid/missing recording
+      }
+    };
+
+    fetchAudio();
+  }, [recording_id]);
 
   return (
     <Link href={`entry/${entry_id}`} asChild>
@@ -117,9 +121,13 @@ const EntryView = React.memo(function EntryView({
                 flexWrap: 'wrap',
               }}>
               <Text style={styles.h2}>{currentTitle}</Text>
-              <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={1} ellipsizeMode="tail">
-                {convertSecondsToMinutesAndSeconds(audio.length)}
-              </Text>
+              {audio !== null ? (
+                <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={1} ellipsizeMode="tail">
+                  {convertSecondsToMinutesAndSeconds(audio.length)}
+                </Text>
+              ) : (
+                <Text style={[styles.h4, { opacity: 0.5 }]}><></></Text>
+              )}
             </View>
 
             <Text style={[styles.h4, { opacity: 0.5 }]} numberOfLines={2} ellipsizeMode="tail">

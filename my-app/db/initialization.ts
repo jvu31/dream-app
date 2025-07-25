@@ -107,9 +107,27 @@ export const createDummyData = async () => {
 
     // ✅ Insert ~15 mood tags
     const moodTags = [
-      'Happy','Grateful','Relaxed','Excited','Motivated','Reflective','Focused',
-      'Calm','Adventurous','Energetic','Peaceful','Inspired','Hopeful','Content','Playful'
-    ].map((name, i) => ({ name, color: `#${Math.floor(Math.random()*16777215).toString(16).padStart(6,'0')}` }));
+      'Happy',
+      'Grateful',
+      'Relaxed',
+      'Excited',
+      'Motivated',
+      'Reflective',
+      'Focused',
+      'Calm',
+      'Adventurous',
+      'Energetic',
+      'Peaceful',
+      'Inspired',
+      'Hopeful',
+      'Content',
+      'Playful',
+    ].map((name, i) => ({
+      name,
+      color: `#${Math.floor(Math.random() * 16777215)
+        .toString(16)
+        .padStart(6, '0')}`,
+    }));
 
     for (const tag of moodTags) {
       await db.run(`
@@ -121,8 +139,26 @@ export const createDummyData = async () => {
 
     // ✅ Insert ~20 people tags
     const peopleTags = [
-      'Alice','Bob','Charlie','David','Ella','Frank','Grace','Hannah','Isaac',
-      'Jack','Kara','Liam','Mia','Noah','Olivia','Paul','Quinn','Riley','Sophie','Tom'
+      'Alice',
+      'Bob',
+      'Charlie',
+      'David',
+      'Ella',
+      'Frank',
+      'Grace',
+      'Hannah',
+      'Isaac',
+      'Jack',
+      'Kara',
+      'Liam',
+      'Mia',
+      'Noah',
+      'Olivia',
+      'Paul',
+      'Quinn',
+      'Riley',
+      'Sophie',
+      'Tom',
     ].map((name) => ({ name, color: '#cccccc' }));
 
     for (const tag of peopleTags) {
@@ -135,11 +171,14 @@ export const createDummyData = async () => {
 
     // ✅ Insert lots of entries for May–July
     const entries = [];
+    const recordings = [];
     const startDate = new Date('2025-05-01');
-    const endDate = new Date('2025-07-31');
+    const endDate = new Date('2025-07-24');
+
+    let recordingCounter = 1;
 
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      const entriesPerDay = Math.random() < 0.7 ? 2 : 1; // 70% chance of 2 entries
+      const entriesPerDay = Math.floor(Math.random() * 3);
       for (let i = 0; i < entriesPerDay; i++) {
         const hour = Math.floor(Math.random() * 12) + 6; // 6 AM – 6 PM
         const minute = Math.floor(Math.random() * 60);
@@ -147,15 +186,34 @@ export const createDummyData = async () => {
         time.setHours(hour, minute, 0, 0);
 
         // Pick random people to mention in content
-        const randomPeople = peopleTags.sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 3) + 1);
-        const content = `Today I spent time with ${randomPeople.map(p => p.name).join(', ')}. We had a great conversation and I felt very ${moodTags[Math.floor(Math.random() * moodTags.length)].name.toLowerCase()}. This entry is longer to simulate realistic journaling notes and includes some details about our day together.`
+        const randomPeople = peopleTags
+          .sort(() => 0.5 - Math.random())
+          .slice(0, Math.floor(Math.random() * 3) + 1);
+        const content = `Today I spent time with ${randomPeople.map((p) => p.name).join(', ')}. We had a great conversation and I felt very ${moodTags[Math.floor(Math.random() * moodTags.length)].name.toLowerCase()}. This entry is longer to simulate realistic journaling notes and includes some details about our day together.`;
+
+        let recordingId: number | null = null;
+        if (Math.random() < 0.5) {
+          const audioName = `audio_${recordingCounter}.mp3`;
+          const length = Math.floor(Math.random() * 300) + 30; // 30s–330s
+
+          await db.run(`
+        INSERT INTO recording (audio, length)
+        VALUES ('${audioName}', ${length});
+      `);
+
+          const { recording_id } = await db.get<{ recording_id: number }>(`
+        SELECT recording_id FROM recording ORDER BY recording_id DESC LIMIT 1;
+      `);
+          recordingId = recording_id;
+          recordingCounter++;
+        }
 
         entries.push({
           pinned: Math.random() < 0.1 ? 1 : 0,
           time: time.toISOString(),
           content,
-          recording_id: 1,
-          peopleInContent: randomPeople.map(p => p.name),
+          recording_id: recordingId,
+          peopleInContent: randomPeople.map((p) => p.name),
         });
       }
     }
@@ -179,7 +237,9 @@ export const createDummyData = async () => {
     }
 
     // ✅ Get tag IDs
-    const allTags = await db.all<{ tag_id: number, name: string, type: string }>(`SELECT tag_id, name, type FROM tag;`);
+    const allTags = await db.all<{ tag_id: number; name: string; type: string }>(
+      `SELECT tag_id, name, type FROM tag;`
+    );
 
     // ✅ Link entries to 3–8 tags each, ensuring people from content are included
     for (const entry of entries) {
@@ -187,10 +247,16 @@ export const createDummyData = async () => {
       if (!entryId) continue;
 
       // Get tag IDs for people mentioned
-      const peopleTagIds = allTags.filter(t => t.type === 'people' && entry.peopleInContent.includes(t.name)).map(t => t.tag_id);
+      const peopleTagIds = allTags
+        .filter((t) => t.type === 'people' && entry.peopleInContent.includes(t.name))
+        .map((t) => t.tag_id);
 
       // Pick random moods
-      const moodTagIds = allTags.filter(t => t.type === 'mood').sort(() => 0.5 - Math.random()).slice(0, Math.floor(Math.random() * 5) + 2).map(t => t.tag_id);
+      const moodTagIds = allTags
+        .filter((t) => t.type === 'mood')
+        .sort(() => 0.5 - Math.random())
+        .slice(0, Math.floor(Math.random() * 5) + 2)
+        .map((t) => t.tag_id);
 
       const finalTags = [...peopleTagIds, ...moodTagIds];
 
@@ -233,8 +299,6 @@ export const createDummyData = async () => {
     console.error('❌ Error creating big dummy data:', err);
   }
 };
-
-
 
 export const clearDatabase = async () => {
   await db.run('DROP TABLE IF EXISTS recording');

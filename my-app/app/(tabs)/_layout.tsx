@@ -16,11 +16,11 @@ function TabBarIcon(props: {
 export default function TabLayout() {
   useEffect(() => {
     const setupDB = async () => {
-      //await clearDatabase()
-      //await initDatabase();
-      //await createDummyData();
+      await clearDatabase()
+      await initDatabase();
+      await createDummyData();
     };
-    setupDB();
+    //setupDB();
   }, []);
   return (
     <Tabs
