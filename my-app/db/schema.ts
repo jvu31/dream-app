@@ -17,6 +17,7 @@ export const alarm = sqliteTable('alarm', {
     time: text('time'),
     days: text('days').default(""),
     snooze: integer('snooze').default(0),
+    active: integer('active').default(0),
     ringtone_id: integer('ringtone_id')
         .references(() => ringtone.ringtone_id)
 })
@@ -28,7 +29,7 @@ export const entry = sqliteTable('entry', {
     content: text('content'),
     title: text('title'),
     recording_id: integer('recording_id')
-        .references(() => recording.recording_id, { onDelete: 'cascade' })
+        .references(() => recording.recording_id, { onDelete: 'set null' })
 })
 
 export const tag = sqliteTable('tag', {

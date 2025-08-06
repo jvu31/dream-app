@@ -17,6 +17,7 @@ export interface AlarmModel {
   time: string | null;
   days: string | null;
   snooze: number | null;
+  active: number | null;
   ringtone_id: number | null;
 }
 

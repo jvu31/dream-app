@@ -1,4 +1,4 @@
-import { Text, View, SectionList, TouchableOpacity } from 'react-native';
+import { Text, View, SectionList } from 'react-native';
 import { colors, styles } from '../../styles';
 import Header from '../../components/header';
 import EntryView from 'components/entryview';
@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Calendar, DateData } from 'react-native-calendars';
 import { parseMonth } from 'components/utils';
 import { useLiveQuery } from 'drizzle-orm/expo-sqlite';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { FloatingAction, IActionProps } from 'react-native-floating-action';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,14 +21,21 @@ export default function Home() {
   // Reactively fetch entries from the database. Data will update automatically on changes.
   const [searchValue, setSearchValue] = useState('');
   const [tagFilters, setTagFilters] = useState([]);
-  const entriesQuery = useMemo(() => {
-    return fetchAllEntries({
+  const [queryObject, setQueryObject] = useState(() =>
+    fetchAllEntries({ query: searchValue, tag_ids: tagFilters, pin: 0 })
+  );
+
+  // Update query object when search or tags change
+  useEffect(() => {
+    const newQuery = fetchAllEntries({
       query: searchValue,
       tag_ids: tagFilters,
       pin: 0,
     });
+    setQueryObject(newQuery);
   }, [searchValue, tagFilters]);
-  const { data: entriesData } = useLiveQuery(entriesQuery);
+
+  const { data: entriesData } = useLiveQuery(queryObject);
   const entries = entriesData || [];
 
   const [selectedDate, setSelectedDate] = useState('');
@@ -36,7 +44,7 @@ export default function Home() {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['80%'], []);
 
-  const router = useRouter()
+  const router = useRouter();
 
   // Groups the entries based on month
   const groupedEntries = useMemo(() => {
@@ -132,18 +140,28 @@ export default function Home() {
 
   // Options for floating action button
   const actions: IActionProps[] = [
-    { name: 'bt_add_entry', text: 'Add Entry' },
-    { name: 'bt_add_alarm', text: 'Add Alarm' },
+    {
+      name: 'bt_add_entry',
+      text: 'Add Entry',
+      color: colors.accent,
+      icon: <FontAwesome name="plus" size={20} color={colors.text} />,
+    },
+    {
+      name: 'bt_add_alarm',
+      text: 'Add Alarm',
+      color: colors.accent,
+      icon: <FontAwesome name="bell" size={20} color={colors.text} />,
+    },
   ];
 
   // Actions for each floating action option
   const handleFloatingActionPress = (name?: string) => {
-    switch (name) { 
+    switch (name) {
       // Add a new entry
       case 'bt_add_entry':
         console.log('Add entry');
         // New entry id is initially -1, changes to actual id when user makes a change
-        router.push(`entry/${-1}`) 
+        router.push(`entry/${-1}`);
         break;
       // Add a new alarm
       case 'bt_add_alarm':
@@ -276,6 +294,8 @@ export default function Home() {
           onPressItem={handleFloatingActionPress}
           distanceToEdge={{ vertical: 80, horizontal: 30 }}
           color={colors.accent}
+          shadow={{ shadowOpacity: 0, shadowRadius: 0 }}
+          overlayColor="rgba(0, 0, 0, .6)"
         />
       </GestureHandlerRootView>
     </SafeAreaView>

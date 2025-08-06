@@ -33,17 +33,17 @@ export const initDatabase = async () => {
       entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
       pinned INTEGER DEFAULT 0,
       time TEXT,
-      content TEXT,
-      title TEXT,
+      content TEXT COLLATE NOCASE,
+      title TEXT COLLATE NOCASE,
       recording_id INTEGER,
-      FOREIGN KEY(recording_id) REFERENCES recording(recording_id) ON DELETE CASCADE
+      FOREIGN KEY(recording_id) REFERENCES recording(recording_id) ON DELETE SET NULL
     );
   `);
 
   await db.run(`
     CREATE TABLE IF NOT EXISTS tag (
       tag_id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
+      name TEXT COLLATE NOCASE,
       type TEXT DEFAULT 'mood',
       color TEXT DEFAULT '#000000'
     );
@@ -64,7 +64,7 @@ export const initDatabase = async () => {
       summary_id INTEGER PRIMARY KEY AUTOINCREMENT,
       start_date TEXT,
       range INTEGER DEFAULT 0,
-      summary TEXT,
+      summary TEXT COLLATE NOCASE,
       image TEXT
     );
   `);
