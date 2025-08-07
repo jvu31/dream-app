@@ -90,12 +90,22 @@ export const createDummyData = async () => {
       SELECT 'Morning Tune', 70
       WHERE NOT EXISTS (SELECT 1 FROM ringtone);
     `);
+    await db.run(`
+      INSERT INTO ringtone (track, volume)
+      SELECT 'Fucking Metal', 70
+      WHERE NOT EXISTS (SELECT 2 FROM ringtone);
+    `);
 
     // 🔔 Insert alarm
     await db.run(`
       INSERT INTO alarm (time, days, snooze, ringtone_id)
       SELECT '07:30 AM', 'Mon,Tue,Wed', 5, 1
       WHERE NOT EXISTS (SELECT 1 FROM alarm WHERE time = '07:30 AM');
+    `);
+    await db.run(`
+      INSERT INTO alarm (time, days, snooze, ringtone_id)
+      SELECT '12:30 PM', 'Sun,Sat', 0, 2
+      WHERE NOT EXISTS (SELECT 1 FROM alarm WHERE time = '12:30 PM');
     `);
 
     // 🔈 Insert recording

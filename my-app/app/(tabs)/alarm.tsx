@@ -1,17 +1,21 @@
-import { Text, TouchableOpacity, View } from 'react-native';
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { Modal, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Header from '../../components/header';
 import AlarmView from 'components/alarmview';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import { colors, styles } from '../../styles';
 import DatePicker from 'react-native-date-picker';
-import { AlarmModel } from 'db/interfaces';
+import { AlarmModel, RingtoneModel } from 'db/interfaces';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-import { editAlarm, fetchAllAlarms } from 'db/queries';
+import { editAlarm, fetchAllAlarms, fetchRingtone, removeAlarm } from 'db/queries';
 
 import '../../global.css';
 import { parseTimeToDate, removeSeconds } from 'components/utils';
+import ConfirmModal from 'components/confirmmodal';
+import { FloatingAction, IActionProps } from 'react-native-floating-action';
+import { router } from 'expo-router';
 
 const defaultAlarm: AlarmModel = {
   alarm_id: -1,
@@ -22,18 +26,36 @@ const defaultAlarm: AlarmModel = {
   ringtone_id: -1,
 };
 
+const DayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
 export default function AlarmScreen() {
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['80%'], []);
+  const snapPoints = useMemo(() => ['82%'], []);
   const [currentAlarm, setCurrentAlarm] = useState<AlarmModel>(defaultAlarm);
+  const [currentRingtone, setCurrentRingtone] = useState<RingtoneModel>();
+  const [currentDays, setCurrentDays] = useState<string[]>([]);
   const [alarms, setAlarms] = useState<AlarmModel[]>([]);
+  const [modal, setModal] = useState(false);
 
   // Opens alarm's bottomsheet
-  const openAlarm = (id: number) => {
-    // Sets the current alarm to whatever the id is, defaults the alarm to null if user is trying to make new alarm
+  const openAlarm = async (id: number) => {
+    let alarmToOpen = defaultAlarm;
+
     if (id !== -1) {
-      setCurrentAlarm(alarms.find((alarm) => alarm.alarm_id === id));
+      const found = alarms.find((alarm) => alarm.alarm_id === id);
+      if (found) {
+        alarmToOpen = found;
+      }
     }
+
+    setCurrentAlarm(alarmToOpen);
+    setCurrentDays(alarmToOpen.days ? alarmToOpen.days.split(',') : []);
+
+    if (alarmToOpen.ringtone_id !== -1) {
+      const ringtone = await fetchRingtone(alarmToOpen.ringtone_id);
+      setCurrentRingtone(ringtone);
+    }
+
     bottomSheetRef.current?.expand();
   };
 
@@ -45,21 +67,24 @@ export default function AlarmScreen() {
 
   // Changes the days of the week for the alarm
   const onDayChange = async (day: string) => {
-    // Case where user wants to remove the day
-    if (currentAlarm.days.includes(day)) {
-      setCurrentAlarm({
-        ...currentAlarm,
-        days: currentAlarm.days.replace(day, ''),
-      });
-      // Case where user wants to add the day
+    let updatedDays: string[];
+
+    if (currentDays.includes(day)) {
+      // Remove the day
+      updatedDays = currentDays.filter((d) => d !== day);
     } else {
-      setCurrentAlarm({
-        ...currentAlarm,
-        days: currentAlarm.days + day + ',',
-      });
+      // Add the day
+      updatedDays = [...currentDays, day];
     }
-    await editAlarm(currentAlarm.alarm_id, currentAlarm.days, 'days');
-  }
+
+    updatedDays = updatedDays.sort((a, b) => DayOrder.indexOf(a) - DayOrder.indexOf(b));
+
+    const dayData = updatedDays.join(',');
+
+    setCurrentDays(updatedDays);
+    setCurrentAlarm({ ...currentAlarm, days: dayData });
+    await editAlarm(currentAlarm.alarm_id, dayData, 'days');
+  };
 
   // Changes the alarm sound of the alarm
 
@@ -94,6 +119,44 @@ export default function AlarmScreen() {
     alarmData();
   }, [currentAlarm]);
 
+  // Open delete modal
+  const deleteAlarm = async () => {
+    await removeAlarm(currentAlarm.alarm_id);
+    setModal(false);
+  };
+
+  // Options for floating action button
+  const actions: IActionProps[] = [
+    {
+      name: 'bt_add_entry',
+      text: 'Add Entry',
+      color: colors.accent,
+      icon: <FontAwesome name="plus" size={20} color={colors.text} />,
+    },
+    {
+      name: 'bt_add_alarm',
+      text: 'Add Alarm',
+      color: colors.accent,
+      icon: <FontAwesome name="bell" size={20} color={colors.text} />,
+    },
+  ];
+
+  // Actions for each floating action option
+  const handleFloatingActionPress = (name?: string) => {
+    switch (name) {
+      // Add a new entry
+      case 'bt_add_entry':
+        console.log('Add entry');
+        // New entry id is initially -1, changes to actual id when user makes a change, and pushes to the entries page
+        router.push(`entry/${-1}`);
+        break;
+      // Add a new alarm
+      case 'bt_add_alarm':
+        console.log('Add alamr');
+        break;
+    }
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, 0.5) ' }]}>
@@ -119,13 +182,19 @@ export default function AlarmScreen() {
         enablePanDownToClose
         backdropComponent={renderBackdrop}
         backgroundStyle={{
-          backgroundColor: 'rgba(43, 36, 53, 0.6)',
+          backgroundColor: 'rgba(43, 36, 53, 1)',
         }}
         handleIndicatorStyle={{
           backgroundColor: 'rgba(255, 255, 255, 1)',
         }}>
         <BottomSheetView>
-          <View style={{ alignItems: 'center' }}>
+          <View
+            style={{
+              alignItems: 'center',
+              transform: [{ scale: 1.5 }],
+              marginTop: 50,
+              marginBottom: 80,
+            }}>
             <DatePicker
               date={new Date(parseTimeToDate(currentAlarm.time))}
               onDateChange={onTimeChange}
@@ -133,7 +202,7 @@ export default function AlarmScreen() {
               theme="dark"
             />
           </View>
-          <View style={{ paddingHorizontal: 18, gap: 8 }}>
+          <View style={{ paddingHorizontal: 18, gap: 18 }}>
             {/* Days of the week */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               {[
@@ -151,21 +220,80 @@ export default function AlarmScreen() {
                     width: 50,
                     height: 50,
                     borderRadius: 25,
-                    backgroundColor: currentAlarm.days.includes(day.day)
+                    backgroundColor: currentDays.includes(day.day)
                       ? colors.accent
                       : 'rgba(255,255,255,0.1)',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}
-                  onPress={() => {onDayChange(day.day)}}>
+                  onPress={() => {
+                    onDayChange(day.day);
+                  }}>
                   <Text style={styles.h3}>{day.letter.toUpperCase()}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.h1}>Awesome</Text>
+            <View style={{ gap: 8, paddingHorizontal: 16 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                <Text style={[styles.h1, { opacity: 0.5 }]}>Sounds</Text>
+                <Text style={[styles.h3, { fontWeight: '600' }]}>
+                  {currentRingtone ? currentRingtone.track : 'None'}
+                </Text>
+              </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                <Text style={[styles.h1, { opacity: 0.5 }]}>Snooze</Text>
+                <Switch
+                  trackColor={{ false: '#767577', true: '#5f4b6c' }}
+                  thumbColor={'#f4f3f4'}
+                  style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }}
+                  value={currentAlarm.snooze > 0}
+                  onValueChange={async (value) => {
+                    const snoozeValue = value ? 5 : 0;
+                    setCurrentAlarm({ ...currentAlarm, snooze: snoozeValue });
+                    await editAlarm(currentAlarm.alarm_id, snoozeValue, 'snooze');
+                  }}
+                />
+              </View>
+              <TouchableOpacity
+                style={{
+                  alignSelf: 'center',
+                  alignItems: 'center',
+                  backgroundColor: colors.accent,
+                  paddingVertical: 6,
+                  paddingHorizontal: 50,
+                  borderRadius: 15,
+                }}
+                onPress={() => setModal(true)}>
+                <Text style={styles.h3}>Delete</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </BottomSheetView>
       </BottomSheet>
+      <FloatingAction
+        actions={actions}
+        onPressItem={handleFloatingActionPress}
+        distanceToEdge={{ vertical: 110, horizontal: 30 }}
+        color={colors.accent}
+        shadow={{ shadowOpacity: 0, shadowRadius: 0 }}
+        overlayColor="rgba(0, 0, 0, .6)"
+      />
+      <ConfirmModal
+        visible={modal}
+        text={'Are you sure you want to delete this alarm?'}
+        onClose={() => setModal(false)}
+        onConfirm={deleteAlarm}
+      />
     </GestureHandlerRootView>
   );
 }

@@ -292,7 +292,7 @@ export default function Home() {
         <FloatingAction
           actions={actions}
           onPressItem={handleFloatingActionPress}
-          distanceToEdge={{ vertical: 80, horizontal: 30 }}
+          distanceToEdge={{ vertical: 110, horizontal: 30 }}
           color={colors.accent}
           shadow={{ shadowOpacity: 0, shadowRadius: 0 }}
           overlayColor="rgba(0, 0, 0, .6)"

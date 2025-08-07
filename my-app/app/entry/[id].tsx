@@ -28,6 +28,7 @@ import Tag from 'components/tag';
 import FilterSheet from 'components/filtersheet';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import Dropdown from 'components/dropdown';
+import ConfirmModal from 'components/confirmmodal';
 
 export default function Entry() {
   const router = useRouter();
@@ -40,6 +41,8 @@ export default function Entry() {
   const [currentTitle, setCurrentTitle] = useState<string>();
   const [currentContent, setCurrentContent] = useState<string>();
   const [currentPin, setCurrentPin] = useState<boolean>();
+  const [modal, setModal] = useState(false);
+
 
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['80%'], []);
@@ -204,6 +207,7 @@ export default function Entry() {
   // Handling the option menu actions
   const deleteEntry = async () => {
     await removeEntry(Number(id));
+    setModal(false)
     router.back();
   };
   const pinEntry = () => {
@@ -218,7 +222,7 @@ export default function Entry() {
   };
 
   const options = [
-    { name: 'Delete Entry', icon: 'trash', action: deleteEntry },
+    { name: 'Delete Entry', icon: 'trash', action: () => setModal(true) },
     { name: 'Pin Entry', icon: 'archive', action: pinEntry },
     { name: 'Remove Audio', icon: 'play', action: removeAudio },
   ];
@@ -287,7 +291,7 @@ export default function Entry() {
                 style={[styles.h2, { opacity: 0.65, textAlignVertical: 'top' }]}
                 value={currentContent}
                 multiline={true}
-                placeholder='What is on your mind?'
+                placeholder="What is on your mind?"
                 placeholderTextColor={colors.text}
                 onChange={(e) => handleChange('content', e.nativeEvent.text)}
               />
@@ -359,6 +363,12 @@ export default function Entry() {
           </BottomSheetView>
         </BottomSheet>
         {openOptions && <Dropdown options={options} />}
+        <ConfirmModal
+          visible={modal}
+          text={'Are you sure you want to delete this entry?'}
+          onClose={() => setModal(false)}
+          onConfirm={deleteEntry}
+        />
       </GestureHandlerRootView>
     </SafeAreaView>
   );
