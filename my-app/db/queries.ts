@@ -202,7 +202,8 @@ export const fetchAlarm = async (id: number) => {
 
 // Add an alarm
 export const addAlarm = async (alarmData: InferInsertModel<typeof schema.alarm>) => {
-  await genericInsert(schema.alarm, alarmData, 'alarm', (t) => t.alarm_id);
+  const alarm = await genericInsert(schema.alarm, alarmData, 'alarm', (t) => t.alarm_id);
+  return [alarm]
 };
 
 

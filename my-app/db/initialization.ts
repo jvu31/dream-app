@@ -23,6 +23,7 @@ export const initDatabase = async () => {
       time TEXT,
       days TEXT DEFAULT '',
       snooze INTEGER DEFAULT 0,
+      active INTEGER DEFAULT 0,
       ringtone_id INTEGER,
       FOREIGN KEY(ringtone_id) REFERENCES ringtone(ringtone_id)
     );

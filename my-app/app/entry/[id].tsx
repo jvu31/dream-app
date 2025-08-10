@@ -43,7 +43,6 @@ export default function Entry() {
   const [currentPin, setCurrentPin] = useState<boolean>();
   const [modal, setModal] = useState(false);
 
-
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['80%'], []);
 
@@ -137,17 +136,19 @@ export default function Entry() {
     switch (type) {
       case 'title':
         setCurrentTitle(value);
-        await editEntry(Number(id), value, 'title');
+        //await editEntry(Number(id), value, 'title');
         break;
       case 'content':
         setCurrentContent(value);
-        await editEntry(Number(id), value, 'content');
+        //await editEntry(Number(id), value, 'content');
         break;
-      case 'pin':
+      case 'pinned':
         setCurrentPin(value);
-        await editEntry(Number(id), value, 'pinned');
+        //await editEntry(Number(id), value, 'pinned');
         break;
     }
+
+    await editEntry(Number(id), value, type);
   };
 
   // Opens the filters
@@ -207,11 +208,11 @@ export default function Entry() {
   // Handling the option menu actions
   const deleteEntry = async () => {
     await removeEntry(Number(id));
-    setModal(false)
+    setModal(false);
     router.back();
   };
   const pinEntry = () => {
-    handleChange('pin', !currentPin);
+    handleChange('pinned', !currentPin);
     setOptions(false);
   };
   const removeAudio = async () => {

@@ -42,7 +42,6 @@ export default function AlarmView({ time, days, active, id, openAlarm }: Props) 
     <TouchableOpacity
       onPress={() => openAlarm(id)}
       style={{ paddingBottom: 16, borderBottomWidth: 2, borderBottomColor: colors.text + '80' }}>
-      {' '}
       {/* Dafuq thats how colors work? */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View>

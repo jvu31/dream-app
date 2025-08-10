@@ -46,6 +46,7 @@ export default function TabLayout() {
         options={{
           title: 'Entries',
           tabBarIcon: ({ color }) => <TabBarIcon name="book" color={color} />,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -53,6 +54,7 @@ export default function TabLayout() {
         options={{
           title: 'Alarm',
           tabBarIcon: ({ color }) => <TabBarIcon name="bell" color={color} />,
+          headerShown: false,
         }}
       />
       <Tabs.Screen

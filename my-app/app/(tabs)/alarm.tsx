@@ -9,7 +9,7 @@ import DatePicker from 'react-native-date-picker';
 import { AlarmModel, RingtoneModel } from 'db/interfaces';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
-import { editAlarm, fetchAllAlarms, fetchRingtone, removeAlarm } from 'db/queries';
+import { addAlarm, editAlarm, fetchAllAlarms, fetchRingtone, removeAlarm } from 'db/queries';
 
 import '../../global.css';
 import { parseTimeToDate, removeSeconds } from 'components/utils';
@@ -39,6 +39,7 @@ export default function AlarmScreen() {
 
   // Opens alarm's bottomsheet
   const openAlarm = async (id: number) => {
+    bottomSheetRef.current?.expand();
     let alarmToOpen = defaultAlarm;
 
     if (id !== -1) {
@@ -46,6 +47,8 @@ export default function AlarmScreen() {
       if (found) {
         alarmToOpen = found;
       }
+    } else {
+      alarmToOpen = defaultAlarm;
     }
 
     setCurrentAlarm(alarmToOpen);
@@ -54,9 +57,9 @@ export default function AlarmScreen() {
     if (alarmToOpen.ringtone_id !== -1) {
       const ringtone = await fetchRingtone(alarmToOpen.ringtone_id);
       setCurrentRingtone(ringtone);
+    } else {
+      setCurrentRingtone(undefined);
     }
-
-    bottomSheetRef.current?.expand();
   };
 
   // Changes the time of the alarm
@@ -122,6 +125,14 @@ export default function AlarmScreen() {
   // Open delete modal
   const deleteAlarm = async () => {
     await removeAlarm(currentAlarm.alarm_id);
+    let newAlarms = [];
+    alarms.forEach((alarm) => {
+      if (alarm.alarm_id !== currentAlarm.alarm_id) {
+        newAlarms.push(alarm);
+      }
+    });
+    setAlarms(newAlarms);
+    bottomSheetRef.current?.close();
     setModal(false);
   };
 
@@ -152,14 +163,33 @@ export default function AlarmScreen() {
         break;
       // Add a new alarm
       case 'bt_add_alarm':
-        console.log('Add alamr');
+        console.log('Add alarm');
+        setCurrentAlarm(defaultAlarm);
+        bottomSheetRef.current?.expand();
         break;
     }
   };
 
+  // Add new alarm
+  const addNewAlarm = async () => {
+    const newAlarmArray = await addAlarm({
+      time: currentAlarm.time,
+      days: currentAlarm.days,
+      snooze: currentAlarm.snooze,
+      active: 1,
+      ringtone_id: currentAlarm.ringtone_id,
+    })
+
+    const newAlarm = Array.isArray(newAlarmArray) ? newAlarmArray[0] : newAlarmArray;
+    setAlarms([...alarms, newAlarm]);
+    setCurrentAlarm(defaultAlarm);
+  }
+
+
+  
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, 0.5) ' }]}>
+      <View style={[styles.container, { backgroundColor: 'rgba(43, 36, 53, .5) ' }]}>
         <Header />
         <Text style={styles.h7}>Alarms</Text>
         {/* List of Alarms */}
@@ -186,7 +216,13 @@ export default function AlarmScreen() {
         }}
         handleIndicatorStyle={{
           backgroundColor: 'rgba(255, 255, 255, 1)',
-        }}>
+        }}
+        onChange={(index) => {
+          if (index === -1 && currentAlarm.alarm_id === -1) {
+            addNewAlarm();
+          }
+        }}
+        >
         <BottomSheetView>
           <View
             style={{
