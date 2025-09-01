@@ -11,9 +11,10 @@ interface Props {
   name: string;
   color: string;
   onClose: () => void;
+  onTagUpdated?: () => void;
 }
 
-const TagEdit = React.memo(function TagEdit({ tag_id, name, color, onClose }: Props) {
+const TagEdit = React.memo(function TagEdit({ tag_id, name, color, onClose, onTagUpdated }: Props) {
   const [currentColor, setCurrentColor] = useState(color);
   const [currentName, setName] = useState(name);
 
@@ -23,9 +24,15 @@ const TagEdit = React.memo(function TagEdit({ tag_id, name, color, onClose }: Pr
 
   const saveChanges = async () => {
     await editTag(tag_id, currentName, 'name');
-    await editTag(tag_id, currentColor, 'color')
-    onClose()
-  }
+    await editTag(tag_id, currentColor, 'color');
+    
+    // Notify parent that tag was updated
+    if (onTagUpdated) {
+      onTagUpdated();
+    }
+    
+    onClose();
+  };
 
   return (
     <Modal

@@ -9,14 +9,16 @@ import { TagModel } from 'db/interfaces';
 
 interface Props {
   tagFilters: number[];
-  setTagFilters: (tags: number) => void;
+  setTagFilters: (tag_id: number) => void;
   setDateRange: (dates: string[]) => void;
+  clearSearch?: () => void;
 }
 
 const FilterSheet = React.memo(function FilterSheet({
   tagFilters,
   setTagFilters,
   setDateRange,
+  clearSearch,
 }: Props) {
   const [tags, setTags] = useState<TagModel[]>([]);
   const [moods, setMoods] = useState<TagModel[]>([]);
@@ -37,6 +39,17 @@ const FilterSheet = React.memo(function FilterSheet({
     fetchTags();
   }, []);
 
+  // Function to refresh tags when they are updated
+  const refreshTags = async () => {
+    try {
+      const data = await fetchAllTags();
+      setTags(data);
+      console.log('Tags refreshed after update!');
+    } catch (error) {
+      console.error('Error refreshing tags:', error);
+    }
+  };
+
   // Saves the mood and people tags from the fetched tags
   useEffect(() => {
     if (tags.length === 0) return;
@@ -49,6 +62,7 @@ const FilterSheet = React.memo(function FilterSheet({
     console.log('Tags grouped!');
   }, [tags]);
 
+
   return (
     <View style={[styles.container, { backgroundColor: 'transparent' }]}>
       <Text style={[styles.h6, { textAlign: 'center' }]}>Filters</Text>
@@ -58,25 +72,29 @@ const FilterSheet = React.memo(function FilterSheet({
       </View>
       {/* Moods */}
       <View style={{ marginBottom: 16, gap: 4 }}>
-        <Text style={[styles.h6, { opacity: 0.5 }]}>Moods</Text>
+        <Text style={[styles.h6, { opacity: 0.5 }]}>
+          Moods {tagFilters.length > 0 && `(${moods.filter(m => tagFilters.includes(m.tag_id)).length} selected)`}
+        </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {moods.map((mood) => (
             <Tag
               key={mood.tag_id}
-                            tag_id={mood.tag_id}
-
+              tag_id={mood.tag_id}
               tag={mood.name}
               color1={mood.color}
               onPress={() => setTagFilters(mood.tag_id)}
               type="mood"
-              active={tagFilters.length === 0 || tagFilters.includes(mood.tag_id)}
+              active={tagFilters.includes(mood.tag_id)}
+              onTagUpdated={refreshTags}
             />
           ))}
         </View>
       </View>
       {/* People */}
       <View style={{ marginBottom: 16, gap: 4 }}>
-        <Text style={[styles.h6, { opacity: 0.5 }]}>People</Text>
+        <Text style={[styles.h6, { opacity: 0.5 }]}>
+          People {tagFilters.length > 0 && `(${people.filter(p => tagFilters.includes(p.tag_id)).length} selected)`}
+        </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {people.map((person) => (
             <Tag
@@ -86,7 +104,8 @@ const FilterSheet = React.memo(function FilterSheet({
               color1={person.color}
               onPress={() => setTagFilters(person.tag_id)}
               type="people"
-              active={tagFilters.length === 0 || tagFilters.includes(person.tag_id)}
+              active={tagFilters.includes(person.tag_id)}
+              onTagUpdated={refreshTags}
             />
           ))}
         </View>

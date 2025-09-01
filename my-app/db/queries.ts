@@ -8,6 +8,7 @@ import {
   inArray,
   AnyColumn,
   desc,
+  or,
 } from 'drizzle-orm';
 import * as schema from './schema';
 import { SQLiteTable } from 'drizzle-orm/sqlite-core';
@@ -113,33 +114,55 @@ export const fetchAllEntries = ({
   tag_ids?: number[];
   pin?: number;
 }) => {
+  console.log('=== DATABASE QUERY DEBUG ===');
+  console.log('fetchAllEntries called with:', { query, tag_ids, pin });
+  console.log('Query type:', typeof query, 'Length:', query.length);
+  console.log('Tag IDs type:', typeof tag_ids, 'Length:', tag_ids.length);
+  console.log('================================');
+  
   const conditions = [];
 
-  if (query) {
-    conditions.push(like(schema.entry.content, `%${query}%`))
+  if (query && query.trim().length > 0) {
+    console.log('Adding search condition for query:', query);
+    // Search in both title and content
+    conditions.push(
+      or(
+        like(schema.entry.content, `%${query}%`),
+        like(schema.entry.title, `%${query}%`)
+      )
+    );
   }
 
   if (pin === 1) {
+    console.log('Adding pin condition');
     conditions.push(eq(schema.entry.pinned, 1));
   }
 
   let baseQuery = db.select().from(schema.entry);
-  let joinedQuery: any = null;
 
   if (Array.isArray(tag_ids) && tag_ids.length > 0) {
-    joinedQuery = db
-      .selectDistinct()
-      .from(schema.entry)
-      .innerJoin(schema.entry_tag, eq(schema.entry.entry_id, schema.entry_tag.entry_id))
-      .innerJoin(schema.tag, eq(schema.entry_tag.tag_id, schema.tag.tag_id));
-
-    conditions.push(inArray(schema.tag.tag_id, tag_ids));
+    console.log('Adding tag filter conditions for tags:', tag_ids);
+    console.log('Tag IDs array:', tag_ids);
+    console.log('Tag IDs type check:', Array.isArray(tag_ids));
+    console.log('Tag IDs length:', tag_ids.length);
+    
+    // For tag filtering, we need to use a different approach
+    // We'll create a subquery to find entries with the specified tags
+    const entriesWithTags = db
+      .selectDistinct({ entry_id: schema.entry_tag.entry_id })
+      .from(schema.entry_tag)
+      .where(inArray(schema.entry_tag.tag_id, tag_ids));
+    
+    // Add condition to only include entries that have the specified tags
+    conditions.push(inArray(schema.entry.entry_id, entriesWithTags));
+    
+    console.log('Tag filtering condition added');
   }
 
   if (conditions.length > 0) {
-    const queryToRun = joinedQuery ?? baseQuery;
-    console.log('Returning query with conditions:', conditions);
-    return queryToRun.where(and(...conditions));
+    console.log('Returning query with', conditions.length, 'conditions');
+    console.log('Conditions:', conditions);
+    return baseQuery.where(and(...conditions));
   }
 
   console.log('Returning base query without conditions');

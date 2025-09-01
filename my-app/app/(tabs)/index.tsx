@@ -20,23 +20,66 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function Home() {
   // Reactively fetch entries from the database. Data will update automatically on changes.
   const [searchValue, setSearchValue] = useState('');
-  const [tagFilters, setTagFilters] = useState([]);
-  const [queryObject, setQueryObject] = useState(() =>
-    fetchAllEntries({ query: searchValue, tag_ids: tagFilters, pin: 0 })
-  );
+  const [debouncedSearchValue, setDebouncedSearchValue] = useState('');
+  const [tagFilters, setTagFilters] = useState<number[]>([]);
 
-  // Update query object when search or tags change
+  // Debounce search input to reduce database queries
   useEffect(() => {
-    const newQuery = fetchAllEntries({
-      query: searchValue,
-      tag_ids: tagFilters,
-      pin: 0,
-    });
-    setQueryObject(newQuery);
-  }, [searchValue, tagFilters]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchValue(searchValue);
+    }, 300);
 
-  const { data: entriesData } = useLiveQuery(queryObject);
-  const entries = entriesData || [];
+    return () => clearTimeout(timer);
+  }, [searchValue]);
+
+  // Create a stable query object that changes when search or tags change
+  const queryObject = useMemo(() => {
+    console.log('Creating new query object with:', { debouncedSearchValue, tagFilters });
+    return fetchAllEntries({ 
+      query: debouncedSearchValue, 
+      tag_ids: tagFilters, 
+      pin: 0 
+    });
+  }, [debouncedSearchValue, tagFilters]);
+
+  // Use regular state instead of useLiveQuery to test if that's the issue
+  const [entries, setEntries] = useState([]);
+  
+  // Fetch entries when query changes
+  useEffect(() => {
+    const fetchEntries = async () => {
+      try {
+        // Execute the Drizzle query object
+        const result = await queryObject.all();
+        setEntries(result || []);
+      } catch (error) {
+        console.error('Error fetching entries:', error);
+        setEntries([]);
+      }
+    };
+
+    fetchEntries();
+  }, [queryObject]);
+
+  // Debug logging (reduced frequency for performance)
+  useEffect(() => {
+    console.log('=== SEARCH DEBUG ===');
+    console.log('Search value:', searchValue);
+    console.log('Debounced search value:', debouncedSearchValue);
+    console.log('Tag filters:', tagFilters);
+    console.log('Entries found:', entries.length);
+    if (entries.length > 0) {
+      console.log('First entry sample:', {
+        id: entries[0].entry_id,
+        title: entries[0].title,
+        content: entries[0].content?.substring(0, 50),
+        time: entries[0].time
+      });
+    } else {
+      console.log('No entries found - this might indicate a filtering issue');
+    }
+    console.log('===================');
+  }, [searchValue, debouncedSearchValue, tagFilters, entries.length]);
 
   const [selectedDate, setSelectedDate] = useState('');
   const [dayEntries, setDayEntries] = useState([]);
@@ -50,39 +93,109 @@ export default function Home() {
   const groupedEntries = useMemo(() => {
     if (!entries || entries.length === 0) return [];
 
-    // Sort entries in descending order (most recent first)
-    const sortedEntries = [...entries].sort((a, b) => {
-      const dateA = new Date(a.time).getTime();
-      const dateB = new Date(b.time).getTime();
-      return dateB - dateA;
-    });
+    try {
+      // Sort entries in descending order (most recent first)
+      const sortedEntries = [...entries].filter(entry => entry && entry.time).sort((a, b) => {
+        try {
+          const dateA = new Date(a.time).getTime();
+          const dateB = new Date(b.time).getTime();
+          return dateB - dateA;
+        } catch (error) {
+          console.error('Error sorting entries:', error);
+          return 0;
+        }
+      });
 
-    // Group by month/year
-    const grouped = sortedEntries.reduce(
-      (acc, entry) => {
-        const date = new Date(entry.time);
-        const monthYear = date.toLocaleString('default', {
-          month: 'long',
-          year: 'numeric',
-        });
+      // Group by month/year
+      const grouped = sortedEntries.reduce(
+        (acc, entry) => {
+          try {
+            if (!entry || !entry.time) return acc;
+            
+            const date = new Date(entry.time);
+            if (isNaN(date.getTime())) return acc; // Skip invalid dates
+            
+            const monthYear = date.toLocaleString('default', {
+              month: 'long',
+              year: 'numeric',
+            });
 
-        if (!acc[monthYear]) acc[monthYear] = [];
-        acc[monthYear].push(entry);
+            if (!acc[monthYear]) acc[monthYear] = [];
+            acc[monthYear].push(entry);
+          } catch (error) {
+            console.error('Error processing entry for grouping:', error, entry);
+          }
 
-        return acc;
-      },
-      {} as Record<string, typeof entries>
-    );
+          return acc;
+        },
+        {} as Record<string, typeof entries>
+      );
 
-    // Format for SectionList
-    return Object.keys(grouped).map((month) => ({
-      title: month,
-      data: grouped[month],
-    }));
+      // Format for SectionList
+      return Object.keys(grouped).map((month) => ({
+        title: month,
+        data: grouped[month],
+      }));
+    } catch (error) {
+      console.error('Error in groupedEntries:', error);
+      return [];
+    }
   }, [entries]);
 
-  // Set search value with debounce call to database
-  useEffect(() => {}, [searchValue]);
+  // Memoized render functions to prevent unnecessary re-renders
+  const renderItem = useCallback(({ item }: { item: any }) => {
+    // Add null checks to prevent crashes
+    if (!item || !item.entry_id || !item.time) {
+      console.warn('Invalid entry item:', item);
+      return null;
+    }
+
+    return (
+      <View style={{ marginBottom: 8, gap: 4 }}>
+        <Text style={[styles.h2, { opacity: 0.5 }]}>
+          {item.time ? parseMonth(item.time) : 'Unknown Date'}
+        </Text>
+        <EntryView
+          entry_id={item.entry_id}
+          icon={item.icon}
+          title={item.title}
+          time={item.time}
+          content={item.content}
+          recording_id={item.recording_id}
+        />
+      </View>
+    );
+  }, []);
+
+  const renderSectionHeader = useCallback(({ section: { title } }: { section: { title: string } }) => (
+    <Text style={styles.h1}>{title}</Text>
+  ), []);
+
+  const keyExtractor = useCallback((item: any, index: number) => `${item.entry_id}-${index}`, []);
+
+  const ItemSeparatorComponent = useCallback(() => <View style={{ height: 4 }} />, []);
+
+  // Memoized calendar render item function
+  const renderCalendarItem = useCallback(({ item }: { item: any }) => {
+    // Add null checks to prevent crashes
+    if (!item || !item.entry_id || !item.time) {
+      console.warn('Invalid calendar entry item:', item);
+      return null;
+    }
+
+    return (
+      <View style={{ marginBottom: 8, gap: 4, marginTop: 16 }}>
+        <EntryView
+          entry_id={item.entry_id}
+          icon={item.icon}
+          time={item.time}
+          title={item.title}
+          content={item.content}
+          recording_id={item.recording_id}
+        />
+      </View>
+    );
+  }, []);
 
   // Renders a backdrop that closes the sheet on press
   const renderBackdrop = useCallback(
@@ -104,13 +217,27 @@ export default function Home() {
 
   // Handles assigning date marks to the calendar days
   const markedDates = useMemo(() => {
+    if (!entries || entries.length === 0) {
+      return {};
+    }
+
     const marks = entries.reduce((acc, entry) => {
-      const dateString = entry.time.split('T')[0];
-      if (!acc[dateString]) {
-        acc[dateString] = { dots: [], marked: true };
+      // Add null checks for entry and entry.time
+      if (!entry || !entry.time) {
+        return acc;
       }
-      // Add a dot for each entry on a specific day
-      acc[dateString].dots.push({ key: entry.entry_id, color: colors.accent });
+
+      try {
+        const dateString = entry.time.split('T')[0];
+        if (!acc[dateString]) {
+          acc[dateString] = { dots: [], marked: true };
+        }
+        // Add a dot for each entry on a specific day
+        acc[dateString].dots.push({ key: entry.entry_id, color: colors.accent });
+      } catch (error) {
+        console.error('Error processing entry time:', error, entry);
+      }
+      
       return acc;
     }, {});
 
@@ -126,7 +253,15 @@ export default function Home() {
   // Handles switching between days
   const onDayPress = (day: DateData) => {
     setSelectedDate(day.dateString);
-    const entriesForDay = entries.filter((entry) => entry.time.startsWith(day.dateString));
+    if (!entries || entries.length === 0) {
+      setDayEntries([]);
+      return;
+    }
+    
+    const entriesForDay = entries.filter((entry) => {
+      if (!entry || !entry.time) return false;
+      return entry.time.startsWith(day.dateString);
+    });
     setDayEntries(entriesForDay);
   };
 
@@ -187,32 +322,24 @@ export default function Home() {
         {view === 'list' && (
           <View>
             <SectionList
-              sections={groupedEntries}
-              keyExtractor={(item, index) => `${item.entry_id}-${index}`}
-              renderItem={({ item }) => (
-                <View style={{ marginBottom: 8, gap: 4 }}>
-                  <Text style={[styles.h2, { opacity: 0.5 }]}>{parseMonth(item.time)}</Text>
-                  <EntryView
-                    entry_id={item.entry_id}
-                    icon={item.icon}
-                    title={item.title}
-                    time={item.time}
-                    content={item.content}
-                    recording_id={item.recording_id}
-                  />
-                </View>
-              )}
-              renderSectionHeader={({ section: { title } }) => (
-                <Text style={styles.h1}>{title}</Text>
-              )}
-              initialNumToRender={2}
-              maxToRenderPerBatch={5}
-              windowSize={3}
+              sections={groupedEntries.filter(section => section.data && section.data.length > 0)}
+              keyExtractor={keyExtractor}
+              renderItem={renderItem}
+              renderSectionHeader={renderSectionHeader}
+              initialNumToRender={5}
+              maxToRenderPerBatch={3}
+              windowSize={5}
               removeClippedSubviews={true}
-              ItemSeparatorComponent={() => <View style={{ height: 4 }} />}
+              ItemSeparatorComponent={ItemSeparatorComponent}
               contentContainerStyle={{
                 paddingBottom: 325,
               }}
+              getItemLayout={(data, index) => ({
+                length: 120, // Approximate height of each item
+                offset: 120 * index,
+                index,
+              })}
+              updateCellsBatchingPeriod={50}
             />
           </View>
         )}
@@ -242,20 +369,9 @@ export default function Home() {
                   Entries
                 </Text>
                 <SectionList
-                  sections={[{ title: 'Entries', data: dayEntries }]}
-                  keyExtractor={(item, index) => `${item.entry_id}-${index}`}
-                  renderItem={({ item }) => (
-                    <View style={{ marginBottom: 8, gap: 4, marginTop: 16 }}>
-                      <EntryView
-                        entry_id={item.entry_id}
-                        icon={item.icon}
-                        time={item.time}
-                        title={item.title}
-                        content={item.content}
-                        recording_id={item.recording_id}
-                      />
-                    </View>
-                  )}
+                  sections={[{ title: 'Entries', data: dayEntries.filter(entry => entry && entry.entry_id) }]}
+                  keyExtractor={keyExtractor}
+                  renderItem={renderCalendarItem}
                   contentContainerStyle={{
                     paddingBottom: 325,
                   }}
@@ -286,6 +402,7 @@ export default function Home() {
               tagFilters={tagFilters}
               setTagFilters={updateTagFilters}
               setDateRange={test}
+              clearSearch={() => setSearchValue('')}
             />
           </BottomSheetView>
         </BottomSheet>

@@ -12,6 +12,7 @@ interface Props {
   active: boolean;
   type: string;
   onPress: () => void;
+  onTagUpdated?: () => void; // Callback to notify parent when tag is updated
 }
 
 const Tag = React.memo(function Tag({ tag_id, tag, color1, active, type, onPress }: Props) {
